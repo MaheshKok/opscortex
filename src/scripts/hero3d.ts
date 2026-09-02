@@ -7,13 +7,18 @@ const small = matchMedia('(max-width: 768px)').matches;
 // ponytail: mobile + reduced-motion get the CSS gradient fallback, no WebGL
 if (canvas && !reduce && !small) init(canvas);
 
-function glowTexture() {
+// function declarations: hoisted, so init() above can call them
+function isLight() { return document.documentElement.dataset.theme === 'light'; }
+function cssVar(n: string) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+function glowTexture(light: boolean) {
   const c = document.createElement('canvas');
   c.width = c.height = 64;
   const g = c.getContext('2d')!;
   const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-  grad.addColorStop(0, 'rgba(255,255,255,1)');
-  grad.addColorStop(0.25, 'rgba(255,160,150,.9)');
+  // dark: white-hot core for additive glow. light: solid coral dot, normal blending.
+  grad.addColorStop(0, light ? 'rgba(224,74,66,1)' : 'rgba(255,255,255,1)');
+  grad.addColorStop(0.25, light ? 'rgba(224,74,66,.85)' : 'rgba(255,160,150,.9)');
   grad.addColorStop(1, 'rgba(232,82,74,0)');
   g.fillStyle = grad;
   g.fillRect(0, 0, 64, 64);
@@ -47,7 +52,7 @@ function init(canvas: HTMLCanvasElement) {
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x09090b, 5, 16);
+  scene.fog = new THREE.Fog(cssVar('--bg'), 5, 16);
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
   camera.position.set(0, 0.4, 7.5);
 
@@ -80,18 +85,31 @@ function init(canvas: HTMLCanvasElement) {
   edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(edge, 3));
   const lines = new THREE.LineSegments(edgeGeo, new THREE.LineBasicMaterial({ color: 0xe8524a, transparent: true, opacity: 0.32 }));
 
+  const tex = { dark: glowTexture(false), light: glowTexture(true) };
   const nodeGeo = new THREE.BufferGeometry().setFromPoints(pts);
-  const nodes = new THREE.Points(
-    nodeGeo,
-    new THREE.PointsMaterial({ size: 0.2, map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true }),
-  );
+  const nodeMat = new THREE.PointsMaterial({ size: 0.2, map: tex.dark, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true });
+  const nodes = new THREE.Points(nodeGeo, nodeMat);
 
   const core = new THREE.Mesh(
     new THREE.IcosahedronGeometry(0.85, 1),
     new THREE.MeshBasicMaterial({ color: 0xff8f84, wireframe: true, transparent: true, opacity: 0.4 }),
   );
-  const coreGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+  const coreGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex.dark, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
   coreGlow.scale.setScalar(2.1);
+
+  const applyTheme = () => {
+    const light = isLight();
+    scene.fog!.color.set(cssVar('--bg'));
+    for (const m of [nodeMat, coreGlow.material]) {
+      m.map = light ? tex.light : tex.dark;
+      m.blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
+      m.needsUpdate = true;
+    }
+    (core.material as THREE.MeshBasicMaterial).color.set(light ? 0xe04a42 : 0xff8f84);
+    coreGlow.visible = !light;
+  };
+  applyTheme();
+  addEventListener('themechange', applyTheme);
 
   const cluster = new THREE.Group();
   cluster.add(lines, nodes, core, coreGlow);
@@ -130,6 +148,7 @@ function init(canvas: HTMLCanvasElement) {
     core.rotation.z = t * 0.15;
     (core.material as THREE.MeshBasicMaterial).opacity = 0.3 + Math.sin(t * 1.4) * 0.12;
     coreGlow.material.opacity = 0.3 + Math.sin(t * 1.4) * 0.12;
+    lines.material.opacity = isLight() ? 0.45 : 0.32;
     grid.position.z = (t * 0.25) % (Math.sqrt(3) * 0.5);
     grid.rotation.y = mx * 0.1;
     camera.position.x += (mx * 0.9 - camera.position.x) * 0.04;

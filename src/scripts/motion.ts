@@ -20,6 +20,15 @@ addEventListener(
   { passive: true },
 );
 
+/* theme toggle: persists choice, tells the 3D scene */
+document.querySelector('.theme')?.addEventListener('click', () => {
+  const root = document.documentElement;
+  const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+  root.dataset.theme = next;
+  try { localStorage.theme = next; } catch {}
+  dispatchEvent(new Event('themechange'));
+});
+
 /* wrap each word in <span class="w"><span>word</span></span>, keeping inline tags like <em> */
 function splitWords(root: HTMLElement, inner = true) {
   const walk = (node: Node) => {
@@ -74,7 +83,7 @@ if (reduce) {
   document.querySelectorAll<HTMLElement>('[data-manifesto]').forEach((el) => {
     splitWords(el, false);
     gsap.to(el.querySelectorAll('.w'), {
-      color: '#ededf0', stagger: 0.04, ease: 'none',
+      opacity: 1, stagger: 0.04, ease: 'none',
       scrollTrigger: { trigger: el, start: 'top 75%', end: 'bottom 40%', scrub: 0.6 },
     });
   });
