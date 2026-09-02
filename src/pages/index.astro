@@ -25,9 +25,9 @@ const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 
 ---
 <Base title="Production-grade Kubernetes, SRE & Cloud courses">
   <!-- HERO -->
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
   <section class="hero">
     <div class="hero__glow"></div>
-    <canvas id="hero-canvas" aria-hidden="true"></canvas>
     <div class="hero__fade"></div>
     <div class="wrap hero__content text-center">
       <p class="eyebrow justify-center" data-hero>Courses for engineers who carry the pager</p>
@@ -243,11 +243,14 @@ payments-api-7d9f8c-mm9qz   1/1     Running            0          9m
 </Base>
 
 <style>
-  .hero { position: relative; min-height: 100svh; display: grid; place-items: center; padding-top: 6rem; padding-bottom: 5rem; overflow: hidden; }
-  .hero__glow { position: absolute; inset: 0; background: radial-gradient(55% 45% at 50% 42%, rgba(232, 82, 74, 0.2), transparent 70%); }
-  #hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .hero__fade { position: absolute; inset: auto 0 0 0; height: 35%; background: linear-gradient(180deg, transparent, var(--bg)); }
-  .hero__content { position: relative; text-shadow: 0 2px 40px var(--bg); }
+  /* monarch scene: the canvas is fixed and page-wide so the follower can travel with the viewport; it sits under the nav (50) */
+  .hero { position: relative; min-height: 100svh; display: grid; place-items: center; padding-top: clamp(10rem, 28vh, 16rem); padding-bottom: 5rem; overflow: hidden; --accent2: #f59e0b; }
+  :root[data-theme="light"] .hero { --accent2: #d97706; }
+  .hero__glow { position: absolute; inset: 0; background: radial-gradient(60% 38% at 50% 26%, rgba(245, 158, 11, 0.22), transparent 70%), radial-gradient(40% 30% at 80% 20%, rgba(232, 82, 74, 0.1), transparent 70%); }
+  #hero-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { #hero-canvas { display: none; } }
+  .hero__fade { position: absolute; inset: auto 0 0 0; height: 35%; background: linear-gradient(180deg, transparent, var(--bg)); z-index: 1; }
+  .hero__content { position: relative; z-index: 2; text-shadow: 0 2px 40px var(--bg); }
   .hero__scroll { position: absolute; bottom: 1.75rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: .75rem; font-size: .68rem; }
   .hero__scroll span { width: 40px; height: 1px; background: var(--line2); overflow: hidden; position: relative; }
   .hero__scroll span::after { content: ""; position: absolute; inset: 0; background: var(--accent); transform: translateX(-100%); animation: sweep 2.2s var(--ease) infinite; }
