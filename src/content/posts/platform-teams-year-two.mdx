@@ -1,0 +1,30 @@
+---
+title: Why platform teams fail in year two
+description: Year one is easy. Everyone is grateful. Year two is when the platform team learns whether it built a product or a ticket queue.
+date: 2026-07-29
+minutes: 6
+---
+
+Year one of a platform team is a honeymoon. You take pain away from application teams and they thank you. Your roadmap is obvious because the problems are obvious.
+
+Year two is where it goes wrong.
+
+## The ticket queue trap
+
+By year two, every team depends on you. That dependency shows up as tickets. Tickets feel like impact, so you staff for tickets. Within six months the platform team is an internal services desk with Kubernetes on the business card.
+
+The fix is uncomfortable: measure yourself on self-service adoption, not tickets closed. A ticket is a product failure.
+
+## The abstraction that leaked
+
+Year one you built a golden path. Year two the paths diverged. One team needs GPUs. One team needs a different database. One team just does not like YAML.
+
+You have two choices: say no and lose them to shadow infrastructure, or say yes and drown. The third option is the one that works: build escape hatches on purpose. Make it easy to step off the path and easy to step back on.
+
+## Nobody owns the platform's SLOs
+
+Application teams have SLOs. The platform they run on usually does not. When the cluster upgrade goes badly, it is an application team's error budget that burns.
+
+Give the platform its own SLOs, its own error budget and its own on-call. If you are not carrying a pager for the thing you built, you are not running a platform. You are publishing one.
+
+*We cover the platform track across Kubernetes in Production, GitOps and Terraform at Scale.*

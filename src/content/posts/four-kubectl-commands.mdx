@@ -1,0 +1,46 @@
+---
+title: The four kubectl commands I run in every incident
+description: Ten years of pages distilled into four commands and the order I run them in.
+date: 2026-08-12
+minutes: 5
+---
+
+Muscle memory matters at 3 a.m. Here is mine.
+
+## 1. What changed?
+
+```bash
+kubectl get events -A --sort-by=.lastTimestamp | tail -40
+```
+
+Events expire after an hour, so this is the first thing I run. Node pressure, failed scheduling, image pull errors and probe failures all show up here before they show up anywhere else.
+
+## 2. Who is unhappy?
+
+```bash
+kubectl get pods -A --field-selector=status.phase!=Running,status.phase!=Succeeded
+```
+
+Every pod that is not fine, in one screen. If this is empty and users are still complaining, the problem is not the pods. Look at networking or a dependency.
+
+## 3. Why is that one unhappy?
+
+```bash
+kubectl describe pod -n <ns> <pod> | sed -n '/Conditions/,/Events/p'
+```
+
+Conditions tell you what the scheduler and kubelet think. The last few events tell you why. Skip the rest of `describe` output. You do not need the volume mounts.
+
+## 4. What did it say before it died?
+
+```bash
+kubectl logs -n <ns> <pod> --previous --tail=200
+```
+
+The `--previous` flag is the one people forget. The current container has been alive for four seconds and has nothing to say. The one that crashed has everything.
+
+## The order matters
+
+Events first because they expire. Pods second because they narrow scope. Describe third because it is targeted. Logs last because they are noisy. Reverse the order and you spend twenty minutes reading logs from a pod that was fine.
+
+*Kubernetes in Production has a full module on debugging from first principles.*

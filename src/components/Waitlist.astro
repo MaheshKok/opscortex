@@ -1,0 +1,60 @@
+{/* Native <dialog>. Opened by any element with [data-waitlist]; attribute value = course name. */}
+<dialog id="waitlist" class="modal">
+  <div class="modal__box">
+    <form class="modal__form grid gap-4" method="dialog">
+      <div>
+        <p class="eyebrow">Waitlist</p>
+        <h3 class="display h3 mt-3">Save your seat <em data-course-label>for early access</em>.</h3>
+        <p class="text-[var(--muted)] mt-3 text-[.95rem]">Founding members get 30% off at launch and a seat in the first live cohort. No spam. One email when doors open.</p>
+      </div>
+      <input type="hidden" name="course" value="" />
+      <label class="grid gap-2">
+        <span class="mono">Work email</span>
+        <input class="input" type="email" name="email" required placeholder="you@company.com" autocomplete="email" />
+      </label>
+      <div class="flex items-center justify-between gap-4 mt-1">
+        <button type="button" class="link text-[var(--muted)]" data-close>Not now</button>
+        <button type="submit" class="btn">Save my seat
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </form>
+    <div class="modal__done text-center py-4">
+      <div class="mx-auto w-14 h-14 rounded-full grid place-items-center" style="background:rgba(232,82,74,.15);border:1px solid rgba(232,82,74,.4)">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff8f84" stroke-width="2.2"><path d="M4 12l5 5L20 6"/></svg>
+      </div>
+      <h3 class="display h3 mt-5">You're on the list.</h3>
+      <p class="text-[var(--muted)] mt-3">We'll email you the moment enrolment opens.</p>
+      <button type="button" class="btn btn--ghost mt-6" data-close>Back to browsing</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const dlg = document.getElementById('waitlist') as HTMLDialogElement;
+  const form = dlg.querySelector('form')!;
+  const course = form.querySelector<HTMLInputElement>('input[name=course]')!;
+  const label = dlg.querySelector('[data-course-label]')!;
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const opener = t.closest<HTMLElement>('[data-waitlist]');
+    if (opener) {
+      const c = opener.dataset.waitlist ?? '';
+      course.value = c;
+      label.textContent = c ? `for ${c}` : 'for early access';
+      dlg.classList.remove('is-done');
+      form.reset();
+      dlg.showModal();
+      return;
+    }
+    if (t.closest('[data-close]') || t === dlg) dlg.close();
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    // TODO: POST to Buttondown / ConvertKit / your API. Static v1 only shows success.
+    // e.g. fetch('https://api.buttondown.com/v1/subscribers', {...})
+    dlg.classList.add('is-done');
+  });
+</script>

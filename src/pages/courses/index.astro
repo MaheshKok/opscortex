@@ -1,0 +1,86 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import CourseCard from '../../components/CourseCard.astro';
+
+const courses = (await getCollection('courses')).sort((a, b) => a.data.order - b.data.order);
+const byId = Object.fromEntries(courses.map((c) => [c.id, c]));
+const hours = courses.reduce((n, c) => n + c.data.hours, 0);
+const full = courses.reduce((n, c) => n + c.data.price, 0);
+
+const paths = [
+  ['SRE track', 'From zero to running the on-call rotation.', ['linux-and-networking-for-sres', 'sre-foundations', 'observability-engineering', 'incident-command']],
+  ['Platform track', 'Own the cluster and everything that ships to it.', ['kubernetes-in-production', 'cicd-and-gitops', 'terraform-at-scale']],
+  ['Cloud architect track', 'Design for failure, cost and the audit.', ['cloud-architecture-patterns', 'terraform-at-scale', 'observability-engineering']],
+] as const;
+---
+<Base title="Courses" description="Eight production-grade courses in Kubernetes, SRE, Terraform, cloud architecture, observability and delivery.">
+  <section class="pt-44 pb-20">
+    <div class="wrap">
+      <p class="eyebrow" data-hero>All courses</p>
+      <h1 class="display h1 mt-6" data-split>Eight courses. <em>One</em> pager.</h1>
+      <p class="lead mt-8" data-hero>Each course stands alone. Together they are the curriculum for an engineer who runs production and sleeps at night. Pick one, or take the whole stack.</p>
+    </div>
+  </section>
+
+  <section class="section pt-0">
+    <div class="wrap grid md:grid-cols-2 gap-4">
+      {courses.map((c, i) => <CourseCard course={c} big={i < 2} delay={(i % 2) * 0.1} />)}
+    </div>
+  </section>
+
+  <section id="paths" class="section bg-[var(--bg2)] border-y border-[var(--line)]">
+    <div class="wrap">
+      <p class="eyebrow" data-reveal>Learning paths</p>
+      <h2 class="display h2 mt-5 max-w-3xl" data-reveal>Not sure where to start? <em>Start here.</em></h2>
+      <div class="grid md:grid-cols-3 gap-4 mt-14">
+        {paths.map(([name, desc, ids], i) => (
+          <div class="card" data-reveal data-delay={String(i * 0.1)}>
+            <div class="card__in">
+              <h3 class="display h3">{name}</h3>
+              <p class="text-[var(--muted)] mt-2">{desc}</p>
+              <ol class="mt-8 grid gap-0 border-t border-[var(--line)]">
+                {ids.map((id, j) => (
+                  <li class="border-b border-[var(--line)]">
+                    <a href={`/courses/${id}`} class="group flex gap-4 py-3.5 items-baseline">
+                      <span class="mono text-[var(--accent2)]">{String(j + 1).padStart(2, '0')}</span>
+                      <span class="group-hover:text-[var(--accent2)] transition-colors">{byId[id].data.title}</span>
+                      <span class="mono ml-auto shrink-0">{byId[id].data.hours}h</span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="bundle" class="section">
+    <div class="wrap">
+      <div class="gborder" data-reveal>
+        <div class="p-10 md:p-16 grid lg:grid-cols-[1.3fr_1fr] gap-12 items-center">
+          <div>
+            <p class="eyebrow">The Whole Stack</p>
+            <h2 class="display h2 mt-5">Every course. Every update. <em>Forever.</em></h2>
+            <p class="lead mt-6">All {courses.length} courses, {hours} hours of labs and lectures, the private cohort channel and every course released in the next twelve months. Founding-member price, locked for life.</p>
+            <ul class="mt-8 grid sm:grid-cols-2 gap-3 text-[var(--muted)]">
+              {['All 8 courses, lifetime access', 'Every new course for 12 months', 'Private cohort channel', 'Certificates of completion', 'Lab repos, MIT licensed', '30-day refund, no questions'].map((f) => (
+                <li class="flex gap-3 items-baseline"><span class="text-[var(--accent)] mono">✓</span>{f}</li>
+              ))}
+            </ul>
+          </div>
+          <div class="text-center lg:text-right">
+            <div class="mono"><s>${full.toLocaleString()}</s> bought separately</div>
+            <div class="display mt-2" style="font-size:clamp(4rem,8vw,6.5rem);line-height:1">$999</div>
+            <p class="text-[var(--muted)] mt-2">one-time · founding price</p>
+            <button class="btn magnetic text-base px-8 py-4 mt-8" data-waitlist="The Whole Stack">Join the founding waitlist
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

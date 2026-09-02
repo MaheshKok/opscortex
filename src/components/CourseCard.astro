@@ -1,0 +1,31 @@
+---
+import type { CollectionEntry } from 'astro:content';
+interface Props { course: CollectionEntry<'courses'>; big?: boolean; delay?: number }
+const { course, big = false, delay = 0 } = Astro.props;
+const d = course.data;
+const num = String(d.order).padStart(2, '0');
+---
+<a href={`/courses/${course.id}`} class="card block h-full" data-reveal data-delay={delay}>
+  <div class="card__in">
+    <div class="flex items-center justify-between">
+      <span class="mono text-[var(--accent2)]">{num}</span>
+      <div class="flex gap-2">
+        <span class="tag">{d.level}</span>
+        <span class="tag">{d.hours}h</span>
+      </div>
+    </div>
+    <h3 class:list={['display mt-8', big ? 'h2' : 'h3']} style={big ? 'font-size:clamp(2rem,3.4vw,3.2rem)' : ''}>{d.title}</h3>
+    <p class="text-[var(--muted)] mt-3 leading-relaxed">{d.tagline}</p>
+    <div class="mt-auto pt-8 flex items-end justify-between gap-4">
+      <div class="flex flex-wrap gap-1.5">
+        {d.tags.slice(0, 3).map((t) => <span class="mono text-[.7rem] text-[var(--dim)]">#{t}</span>)}
+      </div>
+      <div class="text-right shrink-0">
+        <div class="display text-3xl">${d.price}</div>
+        <div class="link text-[.85rem] mt-1">View course
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</a>

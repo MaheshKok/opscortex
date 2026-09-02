@@ -1,0 +1,93 @@
+---
+import '../styles/global.css';
+import Waitlist from '../components/Waitlist.astro';
+interface Props { title: string; description?: string }
+const {
+  title,
+  description = 'Production-grade courses in Kubernetes, SRE, DevOps and cloud. Built from ten years of real incidents.',
+} = Astro.props;
+const nav = [
+  ['Courses', '/courses'],
+  ['Newsletter', '/newsletter'],
+  ['About', '/about'],
+];
+const path = Astro.url.pathname;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · OpsCortex</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={`${title} · OpsCortex`} />
+    <meta property="og:description" content={description} />
+    {/* TODO: drop your logo at public/logo.png — intentionally missing for now */}
+    <link rel="icon" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="nav" id="nav">
+      <div class="wrap nav__in">
+        <a href="/" class="brand">
+          <img src="/logo.png" alt="OpsCortex owl" width="32" height="32" />
+          <span>OpsCortex</span>
+        </a>
+        <nav aria-label="Primary">
+          {nav.map(([l, h]) => <a href={h} aria-current={path.startsWith(h) ? 'page' : undefined}>{l}</a>)}
+        </nav>
+        <button class="btn btn--sm magnetic" data-waitlist>Join waitlist</button>
+      </div>
+    </header>
+
+    <main id="main"><slot /></main>
+
+    <footer class="border-t border-[var(--line)] mt-24">
+      <div class="wrap py-16 grid gap-12 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <div>
+          <a href="/" class="brand"><img src="/logo.png" alt="OpsCortex owl" width="32" height="32" /><span>OpsCortex</span></a>
+          <p class="text-[var(--muted)] mt-5 max-w-xs">Courses and a weekly letter for engineers who carry the pager.</p>
+        </div>
+        <div>
+          <p class="mono mb-4">Learn</p>
+          <ul class="grid gap-2.5 text-[var(--muted)]">
+            <li><a class="hover:text-[var(--text)] transition-colors" href="/courses">All courses</a></li>
+            <li><a class="hover:text-[var(--text)] transition-colors" href="/courses#bundle">The Whole Stack bundle</a></li>
+            <li><a class="hover:text-[var(--text)] transition-colors" href="/courses#paths">Learning paths</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="mono mb-4">Read</p>
+          <ul class="grid gap-2.5 text-[var(--muted)]">
+            <li><a class="hover:text-[var(--text)] transition-colors" href="/newsletter">Newsletter</a></li>
+            <li><a class="hover:text-[var(--text)] transition-colors" href="/about">About</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="mono mb-4">Elsewhere</p>
+          <ul class="grid gap-2.5 text-[var(--muted)]">
+            {/* TODO: real links */}
+            <li><a class="hover:text-[var(--text)] transition-colors" href="#">LinkedIn</a></li>
+            <li><a class="hover:text-[var(--text)] transition-colors" href="#">GitHub</a></li>
+            <li><a class="hover:text-[var(--text)] transition-colors" href="#">YouTube</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap pb-10 flex flex-wrap justify-between gap-4 mono">
+        <span>© {new Date().getFullYear()} OpsCortex. All rights reserved.</span>
+        <span>Built for engineers who carry the pager.</span>
+      </div>
+    </footer>
+
+    <Waitlist />
+    <script src="../scripts/motion.ts"></script>
+  </body>
+</html>

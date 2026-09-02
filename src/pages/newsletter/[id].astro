@@ -1,0 +1,51 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Newsletter from '../../components/Newsletter.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.map((post) => ({ params: { id: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+const more = (await getCollection('posts')).filter((p) => p.id !== post.id).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 2);
+---
+<Base title={post.data.title} description={post.data.description}>
+  <article>
+    <header class="pt-40 pb-14">
+      <div class="wrap max-w-4xl">
+        <a href="/newsletter" class="link text-[var(--muted)]" data-hero>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+          The Pager Digest
+        </a>
+        <p class="mono mt-10" data-hero>{fmt(post.data.date)} &nbsp;·&nbsp; {post.data.minutes} min read</p>
+        <h1 class="display h1 mt-5" style="font-size:clamp(2.5rem,6vw,5.25rem)" data-split>{post.data.title}</h1>
+        <p class="lead mt-7" data-hero>{post.data.description}</p>
+      </div>
+    </header>
+    <div class="wrap max-w-4xl">
+      <div class="hr mb-14"></div>
+      <div class="prose" data-reveal><Content /></div>
+    </div>
+  </article>
+
+  <section class="section">
+    <div class="wrap max-w-4xl">
+      <Newsletter />
+      <p class="eyebrow mt-24" data-reveal>Keep reading</p>
+      <ul class="mt-6">
+        {more.map((p) => (
+          <li class="border-t border-[var(--line)] last:border-b" data-reveal>
+            <a href={`/newsletter/${p.id}`} class="group flex gap-6 py-6 items-baseline">
+              <span class="mono shrink-0 w-28">{p.data.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+              <span class="display text-2xl group-hover:text-[var(--accent2)] transition-colors">{p.data.title}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Base>

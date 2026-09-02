@@ -1,0 +1,41 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Newsletter from '../../components/Newsletter.astro';
+
+const posts = (await getCollection('posts')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+---
+<Base title="The Pager Digest" description="One production lesson a week. Real incidents, redacted. Five minutes, no fluff.">
+  <section class="pt-44 pb-16">
+    <div class="wrap">
+      <p class="eyebrow" data-hero>The Pager Digest</p>
+      <h1 class="display h1 mt-6" data-split>What the pager <em>taught</em> me.</h1>
+      <p class="lead mt-8" data-hero>One production lesson a week, written for engineers who are tired of blog posts that stop at hello world.</p>
+    </div>
+  </section>
+
+  <section class="section--tight pt-0">
+    <div class="wrap"><Newsletter /></div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow" data-reveal>Archive</p>
+      <ul class="mt-8">
+        {posts.map((p, i) => (
+          <li class="border-t border-[var(--line)] last:border-b" data-reveal data-delay={String(i * 0.06)}>
+            <a href={`/newsletter/${p.id}`} class="group grid md:grid-cols-[9rem_1fr_auto] gap-x-8 gap-y-2 py-8 items-baseline">
+              <span class="mono">{fmt(p.data.date)}</span>
+              <span>
+                <span class="display block group-hover:text-[var(--accent2)] transition-colors" style="font-size:clamp(1.6rem,2.6vw,2.4rem);line-height:1.1">{p.data.title}</span>
+                <span class="block text-[var(--muted)] mt-3 max-w-2xl">{p.data.description}</span>
+              </span>
+              <span class="mono">{p.data.minutes} min</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Base>

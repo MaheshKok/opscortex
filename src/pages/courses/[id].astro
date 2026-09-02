@@ -1,0 +1,98 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import CourseCard from '../../components/CourseCard.astro';
+
+export async function getStaticPaths() {
+  const courses = await getCollection('courses');
+  return courses.map((course) => ({ params: { id: course.id }, props: { course } }));
+}
+
+const { course } = Astro.props;
+const d = course.data;
+const { Content } = await render(course);
+const lessons = d.curriculum.reduce((n, m) => n + m.lessons.length, 0);
+
+const all = (await getCollection('courses')).sort((a, b) => a.data.order - b.data.order);
+const idx = all.findIndex((c) => c.id === course.id);
+const next = [all[(idx + 1) % all.length], all[(idx + 2) % all.length]];
+---
+<Base title={d.title} description={d.tagline}>
+  <section class="pt-40 pb-14">
+    <div class="wrap">
+      <a href="/courses" class="link text-[var(--muted)]" data-hero>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        All courses
+      </a>
+      <div class="flex gap-2 flex-wrap mt-10" data-hero>
+        <span class="tag tag--accent">{d.level}</span>
+        {d.tags.map((t) => <span class="tag">{t}</span>)}
+      </div>
+      <h1 class="display h1 mt-6 max-w-5xl" style="font-size:clamp(2.6rem,6.5vw,5.75rem)" data-split>{d.title}</h1>
+      <p class="lead mt-7" data-hero>{d.tagline}</p>
+    </div>
+  </section>
+
+  <section class="section--tight">
+    <div class="wrap grid lg:grid-cols-[1fr_380px] gap-12 lg:gap-16 items-start">
+      <div>
+        <div class="grid grid-cols-3 gap-4" data-reveal>
+          {[[d.hours, 'hours'], [d.curriculum.length, 'modules'], [lessons, 'lessons']].map(([n, l]) => (
+            <div class="card"><div class="card__in !py-5"><div class="display text-4xl">{n}</div><div class="mono mt-1">{l}</div></div></div>
+          ))}
+        </div>
+
+        <h2 class="display h3 mt-16" data-reveal>What you will walk away with</h2>
+        <ul class="mt-6 grid gap-3 text-[1.05rem]" data-reveal>
+          {d.outcomes.map((o) => <li class="flex gap-3 items-baseline"><span class="text-[var(--accent)] mono">✓</span>{o}</li>)}
+        </ul>
+
+        <h2 class="display h3 mt-16" data-reveal>Curriculum</h2>
+        <div class="mt-6" data-reveal>
+          {d.curriculum.map((m, i) => (
+            <details class="acc" open={i === 0}>
+              <summary>
+                <span class="num">{String(i + 1).padStart(2, '0')}</span>
+                <span class="t">{m.title}</span>
+                <span class="mono mr-2">{m.lessons.length} lessons</span>
+                <span class="plus"></span>
+              </summary>
+              <ul>{m.lessons.map((l) => <li>{l}</li>)}</ul>
+            </details>
+          ))}
+        </div>
+
+        <div class="prose mt-16" data-reveal><Content /></div>
+      </div>
+
+      <aside class="lg:sticky lg:top-28" data-reveal data-delay="0.15">
+        <div class="gborder">
+          <div class="p-8">
+            <p class="mono">One-time payment</p>
+            <div class="display mt-2" style="font-size:3.75rem;line-height:1">${d.price}</div>
+            <p class="text-[var(--muted)] mt-3">Lifetime access. Every future update. 30-day refund, no questions asked.</p>
+            <button class="btn w-full justify-center mt-7 magnetic" data-waitlist={d.title}>Join the waitlist
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+            <p class="mono text-center mt-3 text-[.7rem]">Enrolment opens soon · founding price locked</p>
+            <ul class="mt-7 pt-6 border-t border-[var(--line)] grid gap-2.5 text-[.9rem] text-[var(--muted)]">
+              {[`${d.hours} hours of video and labs`, 'Hands-on lab environments', 'Certificate of completion', 'Private cohort channel', 'MIT-licensed lab repos'].map((f) => (
+                <li class="flex gap-3 items-baseline"><span class="text-[var(--accent)] mono text-[.7rem]">→</span>{f}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow" data-reveal>Keep going</p>
+      <h2 class="display h2 mt-5" data-reveal>Pairs well <em>with</em></h2>
+      <div class="grid md:grid-cols-2 gap-4 mt-12">
+        {next.map((c, i) => <CourseCard course={c} delay={i * 0.1} />)}
+      </div>
+    </div>
+  </section>
+</Base>

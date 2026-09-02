@@ -1,0 +1,31 @@
+---
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+---
+<div class:list={['gborder', compact ? '' : 'mt-2']} data-reveal>
+  <div class="p-8 md:p-12 grid md:grid-cols-[1.2fr_1fr] gap-8 items-center">
+    <div>
+      <p class="eyebrow">The Pager Digest</p>
+      <h3 class="display h3 mt-4">One production lesson a week. <em>Five minutes.</em> No fluff.</h3>
+      <p class="text-[var(--muted)] mt-4">Real incidents, redacted. Commands worth memorising. The occasional strong opinion about YAML.</p>
+    </div>
+    <form class="grid gap-3" data-nl>
+      <input class="input" type="email" required placeholder="you@company.com" autocomplete="email" aria-label="Email" />
+      <button class="btn justify-center" type="submit">Subscribe free
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <p class="mono text-center" data-nl-msg>Join 4,800+ engineers. Unsubscribe anytime.</p>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('[data-nl]').forEach((f) => {
+    f.addEventListener('submit', (e) => {
+      e.preventDefault();
+      // TODO: wire to Buttondown / ConvertKit. Static v1 fakes success.
+      f.querySelector('[data-nl-msg]')!.textContent = 'Check your inbox to confirm. Welcome aboard.';
+      f.querySelector('input')!.value = '';
+    });
+  });
+</script>
