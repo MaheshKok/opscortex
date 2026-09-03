@@ -381,6 +381,8 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
   const hoverSide = follow ? (enterFrom === 'left' ? 0.24 : 0.76) : Math.random() < 0.5 ? 0.24 : 0.76;
   const fp = { x: follow ? (enterFrom === 'left' ? -W * 0.15 : W * 1.15) : W * 0.75, y: H * 0.4 }, fv = { x: 0, y: 0 };
   const F_SPEED = 700; // px/s, about the swarm's cruise at this depth
+  const CALM_SPEED = 240; // pace right after a spook, eased back up to F_SPEED over 2.5 s
+  let calmUntil = 0;
   let perch: Perch | null = null;
   const land = { x0: 0, y0: 0, t0: 0, dur: 1, scrollAt: 0 };
   const fq = new THREE.Quaternion();
@@ -502,7 +504,8 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
       const dx = fp.x - mouse.x, dy = fp.y - sy - mouse.y, d = Math.hypot(dx, dy) || 1;
       if (d < 80) {
         fMode = 'fly'; perch = null;
-        fv.x = (dx / d) * 10; fv.y = (dy / d) * 10 - 8;
+        fv.x = (dx / d) * 10; fv.y = (dy / d) * 10 - 8; // heading only: away from the pointer and up; the calm cap sets the pace
+        calmUntil = now + 2500;
         lastScrollT = now + 1200; // counts as a disturbance: it will not land again for ~2.6 s
       }
     }
@@ -513,7 +516,7 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
       fv.x = (fv.x + (tx - fp.x) * 0.012) * 0.9;
       fv.y = (fv.y + (ty - fp.y) * 0.012) * 0.9;
       // its own top speed: a fast scroll leaves it behind (even off screen) and it catches up when you stop
-      const cap = F_SPEED * dt, sp = Math.hypot(fv.x, fv.y);
+      const cap = THREE.MathUtils.lerp(F_SPEED, CALM_SPEED, clamp((calmUntil - now) / 2500, 0, 1)) * dt, sp = Math.hypot(fv.x, fv.y);
       if (sp > cap) { fv.x *= cap / sp; fv.y *= cap / sp; }
       fp.x += fv.x; fp.y += fv.y;
       const onScreen = Math.abs(fp.y - sy - H * 0.4) < H * 0.5;
