@@ -15,7 +15,9 @@ const paths = [
 ] as const;
 ---
 <Base title="Courses" description="Eight production-grade courses in Kubernetes, SRE, Terraform, cloud architecture, observability and delivery.">
-  <section class="pt-44 pb-20">
+  <canvas id="hero-canvas" data-follow aria-hidden="true"></canvas>
+  <section class="page-hero pt-44 pb-20">
+    <div class="page-hero__glow" data-glow aria-hidden="true"></div>
     <div class="wrap">
       <p class="eyebrow" data-hero>All courses</p>
       <h1 class="display h1 mt-6" data-split>Eight courses. <em>One</em> pager.</h1>
@@ -31,8 +33,10 @@ const paths = [
 
   <section id="paths" class="section bg-[var(--bg2)] border-y border-[var(--line)]">
     <div class="wrap">
-      <p class="eyebrow" data-reveal>Learning paths</p>
-      <h2 class="display h2 mt-5 max-w-3xl" data-reveal>Not sure where to start? <em>Start here.</em></h2>
+      <div data-parallax="16">
+        <p class="eyebrow" data-reveal>Learning paths</p>
+        <h2 class="display h2 mt-5 max-w-3xl" data-split>Not sure where to start? <em>Start here.</em></h2>
+      </div>
       <div class="grid md:grid-cols-3 gap-4 mt-14">
         {paths.map(([name, desc, ids], i) => (
           <div class="card" data-reveal data-delay={String(i * 0.1)}>
@@ -63,7 +67,7 @@ const paths = [
         <div class="p-10 md:p-16 grid lg:grid-cols-[1.3fr_1fr] gap-12 items-center">
           <div>
             <p class="eyebrow">The Whole Stack</p>
-            <h2 class="display h2 mt-5">Every course. Every update. <em>Forever.</em></h2>
+            <h2 class="display h2 mt-5" data-split>Every course. Every update. <em>Forever.</em></h2>
             <p class="lead mt-6">All {courses.length} courses, {hours} hours of labs and lectures, the private cohort channel and every course released in the next twelve months. Founding-member price, locked for life.</p>
             <ul class="mt-8 grid sm:grid-cols-2 gap-3 text-[var(--muted)]">
               {['All 8 courses, lifetime access', 'Every new course for 12 months', 'Private cohort channel', 'Certificates of completion', 'Lab repos, MIT licensed', '30-day refund, no questions'].map((f) => (
@@ -83,4 +87,5 @@ const paths = [
       </div>
     </div>
   </section>
+  <script src="../../scripts/hero3d.ts"></script>
 </Base>

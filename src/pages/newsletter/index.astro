@@ -7,7 +7,9 @@ const posts = (await getCollection('posts')).sort((a, b) => b.data.date.valueOf(
 const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 ---
 <Base title="The Pager Digest" description="One production lesson a week. Real incidents, redacted. Five minutes, no fluff.">
-  <section class="pt-44 pb-16">
+  <canvas id="hero-canvas" data-follow aria-hidden="true"></canvas>
+  <section class="page-hero pt-44 pb-16">
+    <div class="page-hero__glow" data-glow aria-hidden="true"></div>
     <div class="wrap">
       <p class="eyebrow" data-hero>The Pager Digest</p>
       <h1 class="display h1 mt-6" data-split>What the pager <em>taught</em> me.</h1>
@@ -38,4 +40,5 @@ const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 
       </ul>
     </div>
   </section>
+  <script src="../../scripts/hero3d.ts"></script>
 </Base>

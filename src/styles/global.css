@@ -121,6 +121,12 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .link::after { content: ""; position: absolute; left: 0; bottom: -3px; height: 1px; width: 100%; background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform .4s var(--ease); }
 .link:hover::after { transform: scaleX(1); transform-origin: left; }
 
+/* ---------- butterfly canvas + page heroes ---------- */
+#hero-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
+.page-hero { position: relative; overflow: hidden; }
+.page-hero__glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(45% 55% at 18% 35%, rgba(79, 157, 255, 0.16), transparent 70%); }
+@media (prefers-reduced-motion: reduce) { #hero-canvas { display: none; } }
+
 /* ---------- nav ---------- */
 .nav { position: fixed; inset: 0 0 auto 0; z-index: 50; transition: transform .5s var(--ease), background .4s, border-color .4s; border-bottom: 1px solid transparent; }
 .nav--solid { background: var(--nav-bg); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); border-color: var(--line); }

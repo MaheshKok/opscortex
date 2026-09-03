@@ -288,7 +288,8 @@ function makeButterfly() {
 
 /* ---------- scene ---------- */
 
-function init(canvas: HTMLCanvasElement) {
+// follow: no swarm, only the follower, which flies in from the side you came from
+function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'right') {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -376,12 +377,13 @@ function init(canvas: HTMLCanvasElement) {
   let fActive = false;
   let fMode: 'fly' | 'land' | 'perch' = 'fly';
   // fp is in page pixels (y includes scroll), so the page can run away from the butterfly; it never teleports
-  const fp = { x: W * 0.75, y: H * 0.4 }, fv = { x: 0, y: 0 };
+  // sub-pages: enters from the left when you move forward through the site, from the right when you go back, and keeps to that side
+  const hoverSide = follow ? (enterFrom === 'left' ? 0.24 : 0.76) : Math.random() < 0.5 ? 0.24 : 0.76;
+  const fp = { x: follow ? (enterFrom === 'left' ? -W * 0.15 : W * 1.15) : W * 0.75, y: H * 0.4 }, fv = { x: 0, y: 0 };
   const F_SPEED = 700; // px/s, about the swarm's cruise at this depth
   let perch: Perch | null = null;
   const land = { x0: 0, y0: 0, t0: 0, dur: 1, scrollAt: 0 };
   const fq = new THREE.Quaternion();
-  const hoverSide = Math.random() < 0.5 ? 0.24 : 0.76;
 
   // anything on the page the follower may sit on
   const candidates = [...document.querySelectorAll('h1, h2, h3, .btn, .card, .eyebrow, blockquote, summary, footer p')];
@@ -469,16 +471,21 @@ function init(canvas: HTMLCanvasElement) {
 
   const updateFollower = (t: number, dt: number, now: number, sy: number) => {
     if (!fActive) {
-      if (sy < 60) return;
-      // one member peels off from where it is on screen
+      if (follow) {
+        // no swarm here: it flies in from the edge as soon as the page is up
+        fp.y = sy + H * 0.4;
+      } else {
+        if (sy < 60) return;
+        // one member peels off from where it is on screen
+        members[0].hidden = true;
+        tmp.copy(members[0].pos).project(camera);
+        fp.x = ((tmp.x + 1) / 2) * W; fp.y = ((1 - tmp.y) / 2) * H + sy;
+      }
       fActive = true;
-      members[0].hidden = true;
-      tmp.copy(members[0].pos).project(camera);
-      fp.x = ((tmp.x + 1) / 2) * W; fp.y = ((1 - tmp.y) / 2) * H + sy;
       fv.x = fv.y = 0;
       fMode = 'fly';
       fb.root.visible = true;
-    } else if (sy < 40) {
+    } else if (!follow && sy < 40) {
       // back at the top: rejoin the swarm
       fActive = false;
       members[0].hidden = false;
@@ -575,7 +582,7 @@ function init(canvas: HTMLCanvasElement) {
     const sy = scrollY;
     if (sy > 40 && !dispersed) { dispersed = true; disperseAt = t; }
     if (sy <= 40) dispersed = false;
-    const swarmOn = !(dispersed && allGone);
+    const swarmOn = !follow && !(dispersed && allGone);
     for (const im of inst) im.visible = swarmOn;
     if (swarmOn) updateSwarm(t, dt);
     updateFollower(t, dt, now, sy);
@@ -587,4 +594,11 @@ function init(canvas: HTMLCanvasElement) {
 
 const canvas = document.getElementById('hero-canvas') as HTMLCanvasElement | null;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-if (canvas && !reduce) init(canvas);
+
+// site order decides the entry side: a higher index than the last page seen is "forward" (from the left), lower is "back" (from the right)
+const PAGES = ['/', '/courses', '/newsletter', '/about'];
+const here = Math.max(0, PAGES.indexOf('/' + location.pathname.split('/')[1]));
+let prev = -1;
+try { prev = Number(sessionStorage.navIdx ?? -1); sessionStorage.navIdx = String(here); } catch {}
+
+if (canvas && !reduce) init(canvas, canvas.dataset.follow !== undefined, prev > here ? 'right' : 'left');

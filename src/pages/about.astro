@@ -11,7 +11,9 @@ const history = [
 const links = [['LinkedIn', '#'], ['GitHub', '#'], ['YouTube', '#'], ['Email', '#']];
 ---
 <Base title="About" description="Ten years of SRE, distilled into courses and a weekly letter.">
-  <section class="pt-44 pb-16">
+  <canvas id="hero-canvas" data-follow aria-hidden="true"></canvas>
+  <section class="page-hero pt-44 pb-16">
+    <div class="page-hero__glow" data-glow aria-hidden="true"></div>
     <div class="wrap grid lg:grid-cols-[1.3fr_1fr] gap-12 items-end">
       <div>
         <p class="eyebrow" data-hero>About</p>
@@ -42,9 +44,9 @@ const links = [['LinkedIn', '#'], ['GitHub', '#'], ['YouTube', '#'], ['Email', '
 
   <section class="section">
     <div class="wrap grid lg:grid-cols-[1fr_1.5fr] gap-12">
-      <div>
+      <div data-parallax="16">
         <p class="eyebrow" data-reveal>How I teach</p>
-        <h2 class="display h2 mt-5" data-reveal>Break it. <em>Then</em> explain it.</h2>
+        <h2 class="display h2 mt-5" data-split>Break it. <em>Then</em> explain it.</h2>
       </div>
       <div class="prose" data-reveal>
         <p>Every course I have taken started with theory and ended, if you were lucky, with a demo. Mine run backwards. You get a working system, something breaks, and we figure out why together. The theory arrives exactly when you need it to fix the thing in front of you.</p>
@@ -72,12 +74,13 @@ const links = [['LinkedIn', '#'], ['GitHub', '#'], ['YouTube', '#'], ['Email', '
   <section class="section">
     <div class="wrap text-center">
       <p class="eyebrow justify-center" data-reveal>Elsewhere</p>
-      <h2 class="display h2 mt-5" data-reveal>Say <em>hello</em>.</h2>
+      <h2 class="display h2 mt-5" data-split>Say <em>hello</em>.</h2>
       <div class="flex gap-3 justify-center flex-wrap mt-10" data-reveal>
         {links.map(([l, h]) => <a href={h} class="btn btn--ghost magnetic">{l}</a>)}
       </div>
     </div>
   </section>
+  <script src="../scripts/hero3d.ts"></script>
 </Base>
 
 <style>
