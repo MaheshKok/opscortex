@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { FORE, HIND, mirrored, paintWing } from './wings';
 
 /*
   Full-page blue morpho scene on one fixed canvas.
@@ -14,202 +15,6 @@ function cssVar(n: string) { return getComputedStyle(document.documentElement).g
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 const easeInOut = (u: number) => (u < 0.5 ? 2 * u * u : 1 - ((-2 * u + 2) ** 2) / 2);
-
-/* ---------- wing painting ---------- */
-
-type Pt = [number, number];
-type Seg = [Pt, Pt, Pt, Pt]; // cubic bezier: p0, c1, c2, p3
-type WingSpec = {
-  w: number; h: number; segs: Seg[]; base: Pt; veins: Pt[][]; border: number;
-  edge: number[];           // outline segments that carry the dark margin
-  costa?: [number, number]; // dark band along the leading edge: width at the base, width at the apex
-  scallops?: number;        // notches per edge segment (hindwing)
-  innerDark?: boolean;      // brown field along the inner margin, where the hindwing meets the abdomen
-};
-
-const bez = (s: Seg, t: number): Pt => {
-  const u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
-  return [a * s[0][0] + b * s[1][0] + c * s[2][0] + d * s[3][0], a * s[0][1] + b * s[1][1] + c * s[2][1] + d * s[3][1]];
-};
-const outline = (segs: Seg[]) => {
-  const p = new Path2D();
-  p.moveTo(segs[0][0][0], segs[0][0][1]);
-  for (const s of segs) p.bezierCurveTo(s[1][0], s[1][1], s[2][0], s[2][1], s[3][0], s[3][1]);
-  p.closePath();
-  return p;
-};
-const vein = (g: CanvasRenderingContext2D, v: Pt[]) => {
-  g.beginPath();
-  g.moveTo(v[0][0], v[0][1]);
-  g.quadraticCurveTo(v[1][0], v[1][1], v[2][0], v[2][1]);
-  g.stroke();
-};
-
-function paintWing(spec: WingSpec, mirror: boolean) {
-  const c = document.createElement('canvas');
-  c.width = spec.w; c.height = spec.h;
-  const g = c.getContext('2d')!;
-  if (mirror) { g.translate(spec.w, 0); g.scale(-1, 1); }
-  const shape = outline(spec.segs);
-  const [bx, by] = spec.base;
-  // point on a segment plus the unit normal pointing into the wing
-  const normalAt = (s: Seg, t: number): [Pt, Pt] => {
-    const p = bez(s, t), p2 = bez(s, Math.min(1, t + 0.01));
-    let nx = -(p2[1] - p[1]), ny = p2[0] - p[0];
-    const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-    if ((bx - p[0]) * nx + (by - p[1]) * ny < 0) { nx = -nx; ny = -ny; }
-    return [p, [nx, ny]];
-  };
-  const edgePath = () => {
-    const p = new Path2D();
-    p.moveTo(spec.segs[spec.edge[0]][0][0], spec.segs[spec.edge[0]][0][1]);
-    for (const i of spec.edge) { const s = spec.segs[i]; p.bezierCurveTo(s[1][0], s[1][1], s[2][0], s[2][1], s[3][0], s[3][1]); }
-    return p;
-  };
-  // a filled polygon with a blurred edge, so dark fields melt into the blue instead of ending in a line
-  const soft = (pts: Pt[], color: string, blur: number) => {
-    g.save();
-    g.shadowColor = color; g.shadowBlur = blur;
-    g.fillStyle = color;
-    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
-    for (const p of pts.slice(1)) g.lineTo(p[0], p[1]);
-    g.closePath(); g.fill(); g.fill();
-    g.restore();
-  };
-
-  // structural blue: bright cyan close to the body, electric blue mid-wing, deep blue toward the edge
-  const grad = g.createRadialGradient(bx, by, 10, bx, by, spec.w * 0.98);
-  grad.addColorStop(0, '#2fa8ea');
-  grad.addColorStop(0.12, '#3fe0ff');
-  grad.addColorStop(0.42, '#19b4ff');
-  grad.addColorStop(0.72, '#1a7cf2');
-  grad.addColorStop(1, '#1236a6');
-  g.fillStyle = grad;
-  g.fill(shape);
-
-  g.save();
-  g.clip(shape);
-  // iridescent sheen: a diagonal streak of pale cyan, the way light catches morpho scales
-  const sheen = g.createLinearGradient(bx, by, spec.w, 0);
-  sheen.addColorStop(0, 'rgba(200,255,255,0)');
-  sheen.addColorStop(0.35, 'rgba(200,255,255,.22)');
-  sheen.addColorStop(0.55, 'rgba(200,255,255,0)');
-  g.fillStyle = sheen; g.fillRect(0, 0, spec.w, spec.h);
-  // scales: thousands of short strokes radiating from the base
-  for (let i = 0; i < 2400; i++) {
-    const x = Math.random() * spec.w, y = Math.random() * spec.h;
-    const a = Math.atan2(y - by, x - bx), l = rand(5, 16);
-    g.strokeStyle = Math.random() < 0.5 ? 'rgba(190,255,255,.10)' : 'rgba(10,30,120,.12)';
-    g.lineWidth = rand(1, 2.5);
-    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
-  }
-  // veins: faint and a shade darker than the field, never black
-  g.lineCap = 'round';
-  for (const v of spec.veins) {
-    g.strokeStyle = 'rgba(8,30,110,.22)'; g.lineWidth = 16; vein(g, v);
-    g.strokeStyle = 'rgba(12,40,140,.5)'; g.lineWidth = 4; vein(g, v);
-  }
-  // leading edge: black-brown band from the base, widening into the whole apex, violet where it meets the blue
-  if (spec.costa) {
-    const [w0, w1] = spec.costa, inner: Pt[] = [];
-    for (let t = 0; t <= 1.0001; t += 0.05) {
-      const [p, n] = normalAt(spec.segs[0], t);
-      const w = w0 + (w1 - w0) * t * t;
-      inner.push([p[0] + n[0] * w, p[1] + n[1] * w]);
-    }
-    const s0 = spec.segs[0][0], apex = spec.segs[0][3];
-    const path: Pt[] = [[s0[0] - 200, s0[1] - 200], [apex[0] + 200, -200], [apex[0] + 200, apex[1] + 220], ...inner.reverse()];
-    soft(path, 'rgba(40,24,96,.85)', 100);
-    soft(path, '#0d0a10', 40);
-  }
-  // inner margin of the hindwing: brown where it lies against the abdomen
-  if (spec.innerDark) {
-    const s = spec.segs[3], inner: Pt[] = [];
-    for (let t = 0; t <= 1.0001; t += 0.05) {
-      const [p, n] = normalAt(s, t);
-      const w = 30 + 90 * (1 - t) * (1 - t);
-      inner.push([p[0] + n[0] * w, p[1] + n[1] * w]);
-    }
-    soft([...inner, [-200, s[3][1] - 100], [-200, s[0][1] + 200]], 'rgba(46,30,20,.95)', 70);
-  }
-  // outer margin: soft dark dusting, then the thin dark edge
-  const edge = edgePath();
-  g.lineCap = 'butt';
-  g.strokeStyle = 'rgba(8,10,40,.45)'; g.lineWidth = spec.border * 2 + 70; g.stroke(edge);
-  g.strokeStyle = '#0b0910'; g.lineWidth = spec.border * 2; g.stroke(edge);
-  // scalloped hindwing edge: cut notches, leave a white fringe dot on each tooth
-  if (spec.scallops) {
-    for (const i of spec.edge) {
-      const s = spec.segs[i], step = 1 / spec.scallops;
-      for (let t = step / 2; t < 1; t += step) {
-        const [p, n] = normalAt(s, t);
-        g.save(); g.globalCompositeOperation = 'destination-out';
-        g.beginPath(); g.arc(p[0] - n[0] * 12, p[1] - n[1] * 12, 22, 0, 7); g.fill();
-        g.restore();
-        const [q, m] = normalAt(s, Math.min(0.995, t + step / 2));
-        g.fillStyle = 'rgba(255,255,255,.92)';
-        g.beginPath(); g.arc(q[0] + m[0] * 7, q[1] + m[1] * 7, 5, 0, 7); g.fill();
-      }
-    }
-  }
-  // brown dusting where the wing meets the body
-  const dust = g.createRadialGradient(bx, by, 0, bx, by, 140);
-  dust.addColorStop(0, 'rgba(34,20,12,.9)');
-  dust.addColorStop(1, 'rgba(34,20,12,0)');
-  g.fillStyle = dust;
-  g.fillRect(0, 0, spec.w, spec.h);
-  g.restore();
-
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  return t;
-}
-
-// canvas space: wing base at the left edge, head toward the top
-const FORE: WingSpec = {
-  w: 1024, h: 720, base: [30, 560], border: 16, edge: [1], costa: [50, 230],
-  segs: [
-    [[8, 520], [220, 300], [600, 50], [1000, 40]],     // costa to the drawn-out apex
-    [[1000, 40], [930, 180], [900, 450], [830, 640]],  // outer margin, slightly concave, to the tornus
-    [[830, 640], [640, 700], [300, 670], [8, 600]],    // inner margin back to base
-    [[8, 600], [4, 570], [4, 540], [8, 520]],
-  ],
-  veins: [
-    [[30, 540], [350, 320], [760, 150]],
-    [[30, 555], [300, 400], [560, 250]],
-    [[30, 565], [300, 470], [540, 420]],
-    [[560, 250], [560, 335], [540, 420]], // discal cell closes here
-    [[560, 250], [760, 150], [990, 60]],
-    [[560, 250], [760, 240], [950, 260]],
-    [[550, 335], [740, 350], [920, 380]],
-    [[540, 420], [720, 460], [880, 500]],
-    [[330, 500], [600, 560], [830, 640]],
-    [[200, 560], [400, 610], [600, 665]],
-    [[30, 600], [150, 630], [300, 650]],
-  ],
-};
-const HIND: WingSpec = {
-  w: 768, h: 768, base: [30, 150], border: 11, edge: [1, 2], scallops: 6, innerDark: true,
-  segs: [
-    [[8, 130], [200, 30], [540, 20], [680, 150]],
-    [[680, 150], [800, 320], [760, 580], [560, 700]],
-    [[560, 700], [400, 790], [170, 730], [60, 570]],
-    [[60, 570], [10, 480], [0, 300], [8, 130]],
-  ],
-  veins: [
-    [[30, 140], [250, 120], [520, 90]],
-    [[30, 150], [200, 180], [330, 250]],
-    [[30, 165], [180, 300], [300, 380]],
-    [[330, 250], [330, 315], [300, 380]],
-    [[330, 250], [500, 170], [680, 150]],
-    [[330, 250], [540, 260], [750, 320]],
-    [[315, 315], [520, 400], [720, 500]],
-    [[300, 380], [450, 520], [600, 670]],
-    [[150, 420], [280, 600], [420, 740]],
-    [[40, 300], [100, 520], [200, 700]],
-  ],
-};
 
 /* ---------- shared geometry / materials ---------- */
 
@@ -226,7 +31,7 @@ const RX = new THREE.Matrix4().makeRotationX(Math.PI / 2);
 const wingGeo = (w: number, h: number, cx: number, cy: number, z: number, mirror: boolean) => {
   const geo = new THREE.PlaneGeometry(w, h, 10, 8).translate(mirror ? -cx : cx, cy, z);
   const pos = geo.attributes.position as THREE.BufferAttribute;
-  for (let i = 0; i < pos.count; i++) { const x = pos.getX(i); pos.setZ(i, pos.getZ(i) + 0.05 * x * x + 0.012 * Math.abs(x)); }
+  for (let i = 0; i < pos.count; i++) { const x = pos.getX(i); pos.setZ(i, pos.getZ(i) + 0.07 * x * x + 0.02 * Math.abs(x)); }
   geo.computeVertexNormals();
   return geo;
 };
@@ -234,17 +39,28 @@ const foreGeoR = wingGeo(1, 0.703, 0.5, 0.1985, -0.004, false), foreGeoL = wingG
 const hindGeoR = wingGeo(0.72, 0.72, 0.36, -0.24, 0.004, false), hindGeoL = wingGeo(0.72, 0.72, 0.36, -0.24, 0.004, true);
 
 // physical material: thin-film iridescence and a cyan sheen give the blue its shifting, metallic look
-const wingMaterial = (map: THREE.Texture) =>
-  new THREE.MeshPhysicalMaterial({
+const tex = (c: HTMLCanvasElement, srgb = true) => {
+  const t = new THREE.CanvasTexture(c);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+};
+const wingMaterial = (color: HTMLCanvasElement, bump: HTMLCanvasElement) => {
+  const map = tex(color);
+  return new THREE.MeshPhysicalMaterial({
     map, emissiveMap: map, emissive: 0xffffff, emissiveIntensity: 0.28,
-    roughness: 0.5, metalness: 0.05,
+    bumpMap: tex(bump, false), bumpScale: 0.05, // cells puff, veins sink: relief that moves with the light
+    roughness: 0.42, metalness: 0.05,
     iridescence: 0.6, iridescenceIOR: 1.35, iridescenceThicknessRange: [180, 420],
     sheen: 0.5, sheenColor: new THREE.Color(0x8fe8ff), sheenRoughness: 0.6,
-    clearcoat: 0.25, clearcoatRoughness: 0.4,
+    clearcoat: 0.4, clearcoatRoughness: 0.35,
     alphaTest: 0.35, side: THREE.DoubleSide,
   });
-const foreMatR = wingMaterial(paintWing(FORE, false)), foreMatL = wingMaterial(paintWing(FORE, true));
-const hindMatR = wingMaterial(paintWing(HIND, false)), hindMatL = wingMaterial(paintWing(HIND, true));
+};
+// each wing is painted once; the left wing is its mirror image
+const fore = paintWing(FORE), hind = paintWing(HIND);
+const foreMatR = wingMaterial(fore.color, fore.bump), foreMatL = wingMaterial(mirrored(fore.color), mirrored(fore.bump));
+const hindMatR = wingMaterial(hind.color, hind.bump), hindMatL = wingMaterial(mirrored(hind.color), mirrored(hind.bump));
 const wingMats = [foreMatR, foreMatL, hindMatR, hindMatL];
 
 // thorax + tapered abdomen as one lathe, head as a sphere, plain dark brown
@@ -255,7 +71,25 @@ const bodyGeo = mergeGeometries([
   ),
   new THREE.SphereGeometry(0.058, 14, 12).translate(0, 0.27, 0),
 ])!;
-const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a110b, roughness: 0.8 });
+// fuzzy thorax and a ringed abdomen; v runs from the tip (canvas top) to the head end (canvas bottom)
+const bodyMap = (() => {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 512;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#1b120b'; g.fillRect(0, 0, 128, 512);
+  for (let y = 0; y < 330; y += 40) {
+    const r = g.createLinearGradient(0, y, 0, y + 40);
+    r.addColorStop(0, '#120b06'); r.addColorStop(0.55, '#1b120b'); r.addColorStop(1, '#3a2718');
+    g.fillStyle = r; g.fillRect(0, y, 128, 40);
+  }
+  for (let i = 0; i < 900; i++) {
+    const x = Math.random() * 128, y = 330 + Math.random() * 182;
+    g.strokeStyle = `rgba(${90 + Math.random() * 60 | 0},${60 + Math.random() * 30 | 0},${35 + Math.random() * 20 | 0},.55)`;
+    g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + rand(-4, 4), y + rand(-9, 9)); g.stroke();
+  }
+  return tex(c);
+})();
+const bodyMat = new THREE.MeshStandardMaterial({ map: bodyMap, roughness: 0.85 });
 
 /* the follower: one detailed butterfly */
 function makeButterfly() {
@@ -265,20 +99,20 @@ function makeButterfly() {
   root.add(inner);
   const foreR = new THREE.Mesh(foreGeoR, foreMatR), foreL = new THREE.Mesh(foreGeoL, foreMatL);
   const hindR = new THREE.Mesh(hindGeoR, hindMatR), hindL = new THREE.Mesh(hindGeoL, hindMatL);
-  const antMat = new THREE.LineBasicMaterial({ color: 0x14100c });
-  const club = new THREE.SphereGeometry(0.012, 8, 6);
+  // antennae as thin lit tubes with clubs, glossy black eyes
+  const dark = new THREE.MeshStandardMaterial({ color: 0x0b0806, roughness: 0.35 });
+  const club = new THREE.SphereGeometry(0.014, 8, 6), eye = new THREE.SphereGeometry(0.03, 12, 10);
   const ant = (s: number) => {
     const g = new THREE.Group();
-    g.add(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.3, -0.02), new THREE.Vector3(0.1 * s, 0.5, -0.08), new THREE.Vector3(0.2 * s, 0.6, -0.12)]),
-      antMat,
-    ));
-    const c = new THREE.Mesh(club, bodyMat);
+    const path = new THREE.CatmullRomCurve3([new THREE.Vector3(0.02 * s, 0.3, -0.02), new THREE.Vector3(0.1 * s, 0.5, -0.08), new THREE.Vector3(0.2 * s, 0.6, -0.12)]);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(path, 12, 0.006, 5), dark));
+    const c = new THREE.Mesh(club, dark);
     c.position.set(0.2 * s, 0.6, -0.12);
     g.add(c);
     return g;
   };
-  inner.add(foreR, foreL, hindR, hindL, new THREE.Mesh(bodyGeo, bodyMat), ant(1), ant(-1));
+  const eyes = [1, -1].map((s) => { const e = new THREE.Mesh(eye, dark); e.position.set(0.045 * s, 0.28, 0.03); return e; });
+  inner.add(foreR, foreL, hindR, hindL, new THREE.Mesh(bodyGeo, bodyMat), ant(1), ant(-1), ...eyes);
   const setWings = (fore: number, hind: number) => {
     foreR.rotation.y = fore; foreL.rotation.y = -fore;
     hindR.rotation.y = hind; hindL.rotation.y = -hind;
@@ -369,6 +203,19 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
   fb.root.scale.setScalar(FS);
   fb.root.visible = false;
   scene.add(fb.root);
+  // a soft ground shadow that fades in as it settles: what makes the perch read as a thing sitting on the page
+  const shadow = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d')!;
+    const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(0,0,0,.6)'); gr.addColorStop(0.5, 'rgba(0,0,0,.25)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, opacity: 0, depthWrite: false }));
+    sp.scale.set(FS * 2.1, FS * 1.5, 1);
+    sp.visible = false;
+    scene.add(sp);
+    return sp;
+  })();
   // compile every shader now (compile() walks hidden objects too); otherwise the follower's first
   // appearance links its programs mid-scroll, a ~40ms hitch at the worst moment
   renderer.compile(scene, camera);
@@ -551,6 +398,10 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
     /* pose */
     const s = wpp(FZ);
     fb.root.position.set((fp.x - W / 2) * s, (H / 2 - (fp.y - sy)) * s, FZ);
+    // shadow: down-left of it (the sun is up-right), fading in over the last stretch of the landing
+    const settle = fMode === 'perch' ? 1 : fMode === 'land' ? clamp(((now - land.t0) / land.dur - 0.7) / 0.3, 0, 1) : 0;
+    shadow.position.set(fb.root.position.x - FS * 0.08, fb.root.position.y - FS * 0.12, FZ - 0.05);
+    shadow.material.opacity += (settle * 0.5 - shadow.material.opacity) * 0.12;
     const speed = Math.hypot(fv.x, fv.y);
     let fore: number, hind: number;
     if (fMode === 'perch') {
@@ -600,6 +451,7 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
     for (const im of inst) im.visible = swarmOn;
     if (swarmOn) updateSwarm(t, dt);
     updateFollower(t, dt, now, sy);
+    shadow.visible = fb.root.visible;
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
   };
