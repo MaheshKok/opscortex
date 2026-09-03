@@ -27,7 +27,7 @@ const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 
   <!-- HERO -->
   <canvas id="hero-canvas" aria-hidden="true"></canvas>
   <section class="hero">
-    <div class="hero__glow"></div>
+    <div class="hero__glow" data-glow></div>
     <div class="hero__fade"></div>
     <div class="wrap hero__content text-center">
       <p class="eyebrow justify-center" data-hero>Courses for engineers who carry the pager</p>
@@ -43,7 +43,6 @@ const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 
       </div>
       <p class="mono mt-12" data-hero>{courses.length} courses &nbsp;·&nbsp; {hours} hours &nbsp;·&nbsp; lifetime access</p>
     </div>
-    <div class="hero__scroll mono" aria-hidden="true"><span></span>Scroll</div>
   </section>
 
   <!-- TOOLS MARQUEE -->
@@ -66,12 +65,12 @@ const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 
   <!-- FEATURED COURSES -->
   <section class="section pt-0">
     <div class="wrap">
-      <div class="flex items-end justify-between gap-6 flex-wrap" data-reveal>
-        <div>
-          <p class="eyebrow">Courses</p>
-          <h2 class="display h2 mt-5">Built from incidents,<br />not <em>slide decks</em>.</h2>
+      <div class="flex items-end justify-between gap-6 flex-wrap">
+        <div data-parallax="18">
+          <p class="eyebrow" data-reveal>Courses</p>
+          <h2 class="display h2 mt-5" data-split>Built from incidents,<br />not <em>slide decks</em>.</h2>
         </div>
-        <a href="/courses" class="link">All {courses.length} courses
+        <a href="/courses" class="link" data-reveal>All {courses.length} courses
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
       </div>
@@ -84,21 +83,23 @@ const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 
   <!-- BENTO -->
   <section class="section bg-[var(--bg2)] border-y border-[var(--line)]">
     <div class="wrap">
-      <p class="eyebrow" data-reveal>What is inside</p>
-      <h2 class="display h2 mt-5 max-w-3xl" data-reveal>Everything a bootcamp promises. <em>Nothing</em> it pads.</h2>
+      <div data-parallax="16">
+        <p class="eyebrow" data-reveal>What is inside</p>
+        <h2 class="display h2 mt-5 max-w-3xl" data-split>Everything a bootcamp promises. <em>Nothing</em> it pads.</h2>
+      </div>
       <div class="grid md:grid-cols-12 gap-4 mt-14">
-        <div class="card md:col-span-7" data-reveal>
+        <div class="card md:col-span-7 min-w-0" data-reveal>
           <div class="card__in">
             <span class="mono text-[var(--accent2)]">01</span>
             <h3 class="display h3 mt-6">Labs that break on purpose</h3>
             <p class="text-[var(--muted)] mt-3 max-w-md">Every module ends with a live environment and a fault you did not see coming. You diagnose. You fix. You write it up.</p>
-            <pre class="term mt-8"><code><span class="c">$</span> kubectl get pods -n payments
-NAME                        READY   STATUS             RESTARTS   AGE
-payments-api-7d9f8c-x2k4p   0/1     <span class="e">CrashLoopBackOff</span>   14         9m
-payments-api-7d9f8c-mm9qz   1/1     Running            0          9m
-<span class="c">$</span> kubectl logs payments-api-7d9f8c-x2k4p --previous --tail=3
-<span class="d">fatal: connection refused: postgres:5432 (timeout 2s)</span>
-<span class="c">$</span> <span class="cursor">▍</span></code></pre>
+            <pre class="term mt-8" data-term><code><span class="ln"><span class="c">$</span> kubectl get pods -n payments</span>
+<span class="ln">NAME                        READY   STATUS             RESTARTS   AGE</span>
+<span class="ln">payments-api-7d9f8c-x2k4p   0/1     <span class="e">CrashLoopBackOff</span>   14         9m</span>
+<span class="ln">payments-api-7d9f8c-mm9qz   1/1     Running            0          9m</span>
+<span class="ln"><span class="c">$</span> kubectl logs payments-api-7d9f8c-x2k4p --previous --tail=3</span>
+<span class="ln"><span class="d">fatal: connection refused: postgres:5432 (timeout 2s)</span></span>
+<span class="ln"><span class="c">$</span> <span class="cursor">▍</span></span></code></pre>
           </div>
         </div>
         <div class="card md:col-span-5" data-reveal data-delay="0.1">
@@ -150,19 +151,21 @@ payments-api-7d9f8c-mm9qz   1/1     Running            0          9m
   <!-- INSTRUCTOR -->
   <section class="section">
     <div class="wrap grid md:grid-cols-[1fr_1.25fr] gap-12 lg:gap-20 items-center">
-      <div class="card" data-reveal>
-        <div class="card__in portrait">
-          {/* TODO: replace with real photo */}
-          <span class="display portrait__mark" aria-hidden="true">MK</span>
-          <div class="mt-auto">
-            <p class="font-semibold text-lg">Mahesh Kokare</p>
-            <p class="text-[var(--muted)]">Site Reliability Engineer · 10 years</p>
+      <div data-parallax="-26">
+        <div class="card" data-reveal>
+          <div class="card__in portrait">
+            {/* TODO: replace with real photo */}
+            <span class="display portrait__mark" aria-hidden="true">MK</span>
+            <div class="mt-auto">
+              <p class="font-semibold text-lg">Mahesh Kokare</p>
+              <p class="text-[var(--muted)]">Site Reliability Engineer · 10 years</p>
+            </div>
           </div>
         </div>
       </div>
       <div>
         <p class="eyebrow" data-reveal>Your instructor</p>
-        <h2 class="display h2 mt-5" data-reveal>Ten years of <em>3 a.m.</em>, distilled.</h2>
+        <h2 class="display h2 mt-5" data-split>Ten years of <em>3 a.m.</em>, distilled.</h2>
         <p class="lead mt-7" data-reveal>
           {/* TODO: placeholder bio */}
           A decade keeping payments, cloud platforms and fast-growing startups online. Hundreds of incidents commanded. Thousands of engineers on-call rotations designed. Every course here started as something that paged me.
@@ -221,10 +224,10 @@ payments-api-7d9f8c-mm9qz   1/1     Running            0          9m
 
   <!-- FINAL CTA -->
   <section class="section relative overflow-hidden">
-    <div class="cta__glow" aria-hidden="true"></div>
+    <div class="cta__glow" data-glow aria-hidden="true"></div>
     <div class="wrap text-center relative">
       <p class="eyebrow justify-center" data-reveal>The Whole Stack</p>
-      <h2 class="display h1 mt-6" style="font-size:clamp(2.75rem,7vw,6.5rem)" data-reveal>Stop rehearsing.<br /><em>Start running</em> production.</h2>
+      <h2 class="display h1 mt-6" style="font-size:clamp(2.75rem,7vw,6.5rem)" data-split>Stop rehearsing.<br /><em>Start running</em> production.</h2>
       <p class="lead mx-auto mt-8" data-reveal>All {courses.length} courses. {hours} hours. Every future update. One founding-member price, locked for life.</p>
       <div class="flex items-center justify-center gap-6 mt-10 flex-wrap" data-reveal>
         <div class="text-left">
@@ -251,13 +254,10 @@ payments-api-7d9f8c-mm9qz   1/1     Running            0          9m
   @media (prefers-reduced-motion: reduce) { #hero-canvas { display: none; } }
   .hero__fade { position: absolute; inset: auto 0 0 0; height: 35%; background: linear-gradient(180deg, transparent, var(--bg)); z-index: 1; }
   .hero__content { position: relative; z-index: 2; text-shadow: 0 2px 40px var(--bg); }
-  .hero__scroll { position: absolute; bottom: 1.75rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: .75rem; font-size: .68rem; }
-  .hero__scroll span { width: 40px; height: 1px; background: var(--line2); overflow: hidden; position: relative; }
-  .hero__scroll span::after { content: ""; position: absolute; inset: 0; background: var(--accent); transform: translateX(-100%); animation: sweep 2.2s var(--ease) infinite; }
-  @keyframes sweep { 60%, 100% { transform: translateX(100%); } }
-
-  /* terminal stays dark in both themes on purpose */
+  /* terminal stays dark in both themes on purpose; lines type in when scrolled into view */
   .term { margin: 0; background: #0a0a0d; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 1.1rem 1.25rem; font-family: var(--mono); font-size: .78rem; line-height: 1.7; color: #8f8f99; overflow-x: auto; }
+  :global(.js) .term .ln { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { :global(.js) .term .ln { opacity: 1; } }
   .term .c { color: var(--accent2); }
   .term .e { color: #ff6b61; font-weight: 500; }
   .term .d { color: #d0d0d8; }

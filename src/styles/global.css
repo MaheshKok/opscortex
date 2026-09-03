@@ -59,6 +59,9 @@ html {
   color-scheme: var(--scheme);
   transition: background-color .4s, color .4s;
 }
+/* Lenis drives the scroll; native smoothing would fight it */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
 body {
   margin: 0;
   overflow-x: hidden;
