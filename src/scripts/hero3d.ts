@@ -403,7 +403,9 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
   addEventListener('scroll', () => { lastScrollT = performance.now(); }, { passive: true });
 
   const cursor = new THREE.Vector3(1e3, 1e3, 0);
+  const mouse = { x: -1e4, y: -1e4 };
   addEventListener('pointermove', (e) => {
+    mouse.x = e.clientX; mouse.y = e.clientY;
     cursor.set((e.clientX - W / 2) * wpp(0), (H / 2 - e.clientY) * wpp(0), 0);
   });
 
@@ -495,6 +497,15 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
 
     if (fMode === 'perch' && perch && (Math.abs(sy - perch.scrollAt) > 80 || !inView(perch.el))) { fMode = 'fly'; perch = null; }
     if (fMode === 'land' && Math.abs(sy - land.scrollAt) > 40) { fMode = 'fly'; perch = null; }
+    // the cursor coming onto it (perched, or about to) spooks it: off away from the pointer, and no settling for a while
+    if (fMode !== 'fly') {
+      const dx = fp.x - mouse.x, dy = fp.y - sy - mouse.y, d = Math.hypot(dx, dy) || 1;
+      if (d < 80) {
+        fMode = 'fly'; perch = null;
+        fv.x = (dx / d) * 10; fv.y = (dy / d) * 10 - 8;
+        lastScrollT = now + 1200; // counts as a disturbance: it will not land again for ~2.6 s
+      }
+    }
 
     if (fMode === 'fly') {
       const tx = W * hoverSide + Math.sin(now * 0.0007) * W * 0.05;
