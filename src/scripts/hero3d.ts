@@ -368,6 +368,9 @@ function init(canvas: HTMLCanvasElement) {
   fb.root.scale.setScalar(FS);
   fb.root.visible = false;
   scene.add(fb.root);
+  // compile every shader now (compile() walks hidden objects too); otherwise the follower's first
+  // appearance links its programs mid-scroll, a ~40ms hitch at the worst moment
+  renderer.compile(scene, camera);
 
   type Perch = { el: Element; fx: number; scrollAt: number };
   let fActive = false;
