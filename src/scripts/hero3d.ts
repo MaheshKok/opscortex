@@ -50,10 +50,10 @@ const wingMaterial = (color: HTMLCanvasElement, bump: HTMLCanvasElement) => {
   return new THREE.MeshPhysicalMaterial({
     map, emissiveMap: map, emissive: 0xffffff, emissiveIntensity: 0.28,
     bumpMap: tex(bump, false), bumpScale: 0.05, // cells puff, veins sink: relief that moves with the light
-    roughness: 0.42, metalness: 0.05,
+    roughness: 0.48, metalness: 0.05,
     iridescence: 0.6, iridescenceIOR: 1.35, iridescenceThicknessRange: [180, 420],
     sheen: 0.5, sheenColor: new THREE.Color(0x8fe8ff), sheenRoughness: 0.6,
-    clearcoat: 0.4, clearcoatRoughness: 0.35,
+    clearcoat: 0.3, clearcoatRoughness: 0.35,
     alphaTest: 0.35, side: THREE.DoubleSide,
   });
 };

@@ -92,20 +92,20 @@ export function paintWing(spec: WingSpec) {
   };
 
   /* ---- colour ---- */
-  // structural blue: cyan close to the body, electric mid-wing, deep toward the margin (the site's first morpho palette)
+  // structural blue: the site's first morpho palette, compressed so its deep outer blues sit inside the field the band leaves visible
   const grad = g.createRadialGradient(bx, by, 10, bx, by, w * 0.98);
   grad.addColorStop(0, '#2fa8ea');
-  grad.addColorStop(0.12, '#3fe0ff');
-  grad.addColorStop(0.42, '#19b4ff');
-  grad.addColorStop(0.72, '#1a7cf2');
+  grad.addColorStop(0.1, '#19b4ff');
+  grad.addColorStop(0.4, '#1690f8');
+  grad.addColorStop(0.72, '#1560d6');
   grad.addColorStop(1, '#1236a6');
   g.fillStyle = grad; g.fill(shape);
   g.save(); g.clip(shape);
-  if (spec.apex) glow(g, spec.apex, w * 0.46, '160,230,255', 0.55);
+  if (spec.apex) glow(g, spec.apex, w * 0.46, '110,180,255', 0.4);
   // each cell glows from its centre, brightest toward the band: the stained-glass look of the photo
   for (const c of cells) for (const t of [0.35, 0.6, 0.82]) {
     const p = mid(quad(c.s, t), quad(c.n, t)), r = dist(quad(c.s, t), quad(c.n, t)) * 0.6;
-    glow(g, p, r, '120,215,255', 0.15 + 0.2 * t);
+    glow(g, p, r, '70,150,255', 0.12 + 0.15 * t);
   }
   // iridescent sheen: a diagonal streak of pale cyan, the way light catches the scales
   const sheen = g.createLinearGradient(bx, by, w, 0);
