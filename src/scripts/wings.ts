@@ -1,7 +1,7 @@
 /*
   Wing painting on 2D canvas, no three.js here so a scratch page can render it at full size.
   After the reference photo: an electric-blue swallowtail. Bold dark veins cut the wing into glowing cells, a dark
-  submarginal band carries a row of blue spots, the forewing pales to cyan at the apex, the hindwing has short tails,
+  submarginal band carries a row of blue spots, the forewing pales to cyan at the apex, the hindwing is round with
   white crescents in the scallops and an orange spot at the tornus.
   Canvas space: wing base at the left edge, head toward the top. paintWing returns a colour canvas and a bump canvas.
 */
@@ -16,7 +16,6 @@ export type WingSpec = {
   fade?: number;        // the segment after them, along which the band thins away
   band: number;         // width of the dark submarginal band
   spots: number[];      // cells that get a blue spot in the band
-  tail?: { at: Pt; ang: number }; // blue streak along the tail
   apex?: Pt;            // pale cyan wash centred here
   notch?: number[];     // cells whose margin is notched, with a white crescent inside (hindwing)
   innerDark?: number;   // outline segment along the abdomen that gets the brown field
@@ -93,20 +92,20 @@ export function paintWing(spec: WingSpec) {
   };
 
   /* ---- colour ---- */
-  // structural blue: deep near the body, electric mid-wing, bright toward the margin
+  // structural blue: cyan close to the body, electric mid-wing, deep toward the margin (the site's first morpho palette)
   const grad = g.createRadialGradient(bx, by, 10, bx, by, w * 0.98);
-  grad.addColorStop(0, '#1a2f9a');
-  grad.addColorStop(0.18, '#1f56e8');
-  grad.addColorStop(0.45, '#1e8dff');
-  grad.addColorStop(0.75, '#2fb8ff');
-  grad.addColorStop(1, '#3cc8ff');
+  grad.addColorStop(0, '#2fa8ea');
+  grad.addColorStop(0.12, '#3fe0ff');
+  grad.addColorStop(0.42, '#19b4ff');
+  grad.addColorStop(0.72, '#1a7cf2');
+  grad.addColorStop(1, '#1236a6');
   g.fillStyle = grad; g.fill(shape);
   g.save(); g.clip(shape);
-  if (spec.apex) glow(g, spec.apex, w * 0.46, '205,250,255', 0.85);
+  if (spec.apex) glow(g, spec.apex, w * 0.46, '160,230,255', 0.55);
   // each cell glows from its centre, brightest toward the band: the stained-glass look of the photo
   for (const c of cells) for (const t of [0.35, 0.6, 0.82]) {
     const p = mid(quad(c.s, t), quad(c.n, t)), r = dist(quad(c.s, t), quad(c.n, t)) * 0.6;
-    glow(g, p, r, '150,245,255', 0.22 + 0.3 * t);
+    glow(g, p, r, '120,215,255', 0.15 + 0.2 * t);
   }
   // iridescent sheen: a diagonal streak of pale cyan, the way light catches the scales
   const sheen = g.createLinearGradient(bx, by, w, 0);
@@ -139,15 +138,9 @@ export function paintWing(spec: WingSpec) {
     gr.addColorStop(0, '#c4fbff'); gr.addColorStop(0.55, '#5fd6ff'); gr.addColorStop(1, '#2f9bff');
     ellipse(g, p, c.width * 0.34, band * 0.2, c.ang, gr);
   }
-  if (spec.tail) {
-    const { at, ang } = spec.tail;
-    const gr = g.createRadialGradient(at[0], at[1], 0, at[0], at[1], 34);
-    gr.addColorStop(0, '#9ff0ff'); gr.addColorStop(1, '#2f9bff');
-    ellipse(g, at, 34, 8, ang, gr);
-  }
   // hindwing: notch the margin between the veins, leave a white crescent inside each notch
   for (const i of spec.notch ?? []) {
-    const c = cells[i], r = c.width * 0.2, p = along(c, -r * 0.55);
+    const c = cells[i], r = c.width * 0.15, p = along(c, -r * 0.55);
     g.save(); g.globalCompositeOperation = 'destination-out';
     g.beginPath(); g.arc(p[0], p[1], r, 0, 7); g.fill(); g.restore();
     ellipse(g, along(c, r * 0.55 + 12), c.width * 0.24, 8, c.ang, 'rgba(240,252,255,.92)');
@@ -197,20 +190,20 @@ export function mirrored(c: HTMLCanvasElement) {
 }
 
 export const FORE: WingSpec = {
-  w: 1024, h: 720, base: [30, 560], border: 14, band: 95, spots: [0, 1, 2, 3, 4, 5], edge: [1, 2], fade: 3, apex: [1000, 40],
+  w: 1024, h: 720, base: [30, 560], border: 14, band: 95, spots: [0, 1, 2, 3, 4, 5], edge: [1, 2], fade: 3, apex: [940, 70],
   segs: [
-    [[8, 520], [220, 300], [600, 50], [1000, 40]],     // costa to the drawn-out apex
-    [[1000, 40], [930, 180], [900, 450], [830, 640]],  // outer margin, slightly concave, to the tornus
+    [[8, 520], [200, 290], [620, 40], [940, 70]],      // costa to a blunt apex
+    [[940, 70], [1030, 150], [1000, 460], [830, 640]], // outer margin, convex and round, to the tornus
     [[830, 640], [773, 658], [703, 668], [624, 671]],  // inner margin, the stretch that shows past the hindwing
     [[624, 671], [440, 678], [212, 649], [8, 600]],    // inner margin back to the base
     [[8, 600], [4, 570], [4, 540], [8, 520]],
   ],
   spokes: [
-    [[34, 548], [380, 300], [985, 52]],
-    [[34, 552], [420, 330], [962, 138]],
-    [[34, 556], [430, 380], [930, 257]],
-    [[34, 560], [420, 440], [900, 387]],
-    [[34, 566], [400, 500], [868, 518]],
+    [[34, 548], [380, 300], [967, 108]],
+    [[34, 552], [420, 330], [988, 194]],
+    [[34, 556], [430, 380], [984, 304]],
+    [[34, 560], [420, 440], [956, 426]],
+    [[34, 566], [400, 500], [905, 539]],
     [[34, 574], [360, 560], [830, 640]],
     [[34, 584], [300, 610], [624, 671]],
     [[34, 594], [180, 630], [369, 662]],
@@ -219,23 +212,21 @@ export const FORE: WingSpec = {
 };
 
 export const HIND: WingSpec = {
-  w: 768, h: 768, base: [30, 150], border: 10, band: 80, spots: [0, 1, 4, 5], edge: [1, 2, 3, 4], notch: [0, 1, 4, 5], innerDark: 5, tornus: [150, 640], tail: { at: [618, 690], ang: 1.25 },
+  w: 768, h: 768, base: [30, 150], border: 10, band: 80, spots: [0, 1, 2, 3, 4], edge: [1, 2], notch: [0, 1, 2, 3, 4], innerDark: 3, tornus: [185, 625],
   segs: [
     [[8, 130], [200, 30], [540, 20], [680, 150]],      // costa
-    [[680, 150], [800, 300], [770, 520], [620, 600]],  // outer margin to the tail root
-    [[620, 600], [655, 640], [675, 705], [660, 748]],  // tail, outer side
-    [[660, 748], [630, 730], [585, 690], [545, 655]],  // tail, inner side
-    [[545, 655], [420, 760], [170, 735], [60, 570]],   // lower margin to the tornus
+    [[680, 150], [790, 290], [770, 520], [640, 640]],  // outer margin, round
+    [[640, 640], [520, 760], [200, 750], [60, 570]],   // lower margin, round, to the tornus
     [[60, 570], [10, 480], [0, 300], [8, 130]],        // inner margin, against the abdomen
   ],
   spokes: [
-    [[34, 146], [330, 150], [742, 272]],
-    [[34, 152], [330, 240], [751, 401]],
-    [[34, 158], [310, 330], [710, 517]],
-    [[34, 166], [300, 430], [660, 748]],
-    [[34, 178], [240, 470], [406, 714]],
-    [[34, 195], [150, 470], [242, 701]],
-    [[34, 220], [80, 450], [118, 635]],
+    [[34, 146], [420, 150], [738, 269]],
+    [[34, 152], [420, 230], [750, 402]],
+    [[34, 160], [400, 320], [717, 533]],
+    [[34, 170], [360, 400], [640, 640]],
+    [[34, 182], [280, 470], [488, 712]],
+    [[34, 196], [190, 500], [324, 713]],
+    [[34, 220], [90, 460], [163, 658]],
   ],
   cross: [[[300, 190], [330, 260], [300, 330]]],
 };
