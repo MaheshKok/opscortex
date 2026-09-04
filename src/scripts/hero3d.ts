@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { FORE, HIND, mirrored, paintWing } from './wings';
+import { paintWing, mirrored, FORE, HIND } from './wings';
 
 /*
-  Full-page blue morpho scene on one fixed canvas.
+  Full-page red butterfly scene on one fixed canvas.
   Hero: a swarm rises from below the fold into a slow drifting cloud; the cursor scatters it.
-  Scroll: the swarm flies off sideways and upward at its own pace; one morpho leaves it and follows the viewport. Stop scrolling and it lands on
+  Scroll: the swarm flies off sideways and upward at its own pace; one butterfly leaves it and follows the viewport. Stop scrolling and it lands on
   whatever is on screen (a heading, a card, a button) until you move again, all the way to the footer.
   Wings are painted on canvas (forewing and hindwing separately), the swarm is instanced: five draw calls.
 */
@@ -38,7 +38,9 @@ const wingGeo = (w: number, h: number, cx: number, cy: number, z: number, mirror
 const foreGeoR = wingGeo(1, 0.703, 0.5, 0.1985, -0.004, false), foreGeoL = wingGeo(1, 0.703, 0.5, 0.1985, -0.004, true);
 const hindGeoR = wingGeo(0.72, 0.72, 0.36, -0.24, 0.004, false), hindGeoL = wingGeo(0.72, 0.72, 0.36, -0.24, 0.004, true);
 
-// physical material: thin-film iridescence and a cyan sheen give the blue its shifting, metallic look
+// top face: a warm sheen and a thin gold-red iridescence over the red, a wet-looking clearcoat on top.
+// underside: its own matte material on the back face; one glossy material on both faces put the clearcoat
+// highlight and the bump relief on the underside too, which read as a shine and a glitch from behind
 const tex = (c: HTMLCanvasElement, srgb = true) => {
   const t = new THREE.CanvasTexture(c);
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
@@ -48,48 +50,70 @@ const tex = (c: HTMLCanvasElement, srgb = true) => {
 const wingMaterial = (color: HTMLCanvasElement, bump: HTMLCanvasElement) => {
   const map = tex(color);
   return new THREE.MeshPhysicalMaterial({
-    map, emissiveMap: map, emissive: 0xffffff, emissiveIntensity: 0.28,
-    bumpMap: tex(bump, false), bumpScale: 0.05, // cells puff, veins sink: relief that moves with the light
-    roughness: 0.48, metalness: 0.05,
-    iridescence: 0.6, iridescenceIOR: 1.35, iridescenceThicknessRange: [180, 420],
-    sheen: 0.5, sheenColor: new THREE.Color(0x8fe8ff), sheenRoughness: 0.6,
-    clearcoat: 0.3, clearcoatRoughness: 0.35,
-    alphaTest: 0.35, side: THREE.DoubleSide,
+    map, emissiveMap: map, emissive: 0xffffff, emissiveIntensity: 0.42,
+    bumpMap: tex(bump, false), bumpScale: 0.06, // cells puff, veins sink: relief that moves with the light
+    roughness: 0.38, metalness: 0.05,
+    iridescence: 0.3, iridescenceIOR: 1.3, iridescenceThicknessRange: [120, 300],
+    sheen: 0.6, sheenColor: new THREE.Color(0xff9a70), sheenRoughness: 0.55,
+    clearcoat: 0.55, clearcoatRoughness: 0.3,
+    alphaTest: 0.35, side: THREE.FrontSide,
   });
 };
-// each wing is painted once; the left wing is its mirror image
-const fore = paintWing(FORE), hind = paintWing(HIND);
+const underMaterial = (color: HTMLCanvasElement) => {
+  const map = tex(color);
+  return new THREE.MeshStandardMaterial({
+    map, emissiveMap: map, emissive: 0xffffff, emissiveIntensity: 0.16,
+    roughness: 0.9, metalness: 0,
+    alphaTest: 0.35, side: THREE.BackSide,
+  });
+};
+// each wing is painted once per face; the left wing is its mirror image
+const fore = paintWing(FORE), hind = paintWing(HIND), foreU = paintWing(FORE, true), hindU = paintWing(HIND, true);
 const foreMatR = wingMaterial(fore.color, fore.bump), foreMatL = wingMaterial(mirrored(fore.color), mirrored(fore.bump));
 const hindMatR = wingMaterial(hind.color, hind.bump), hindMatL = wingMaterial(mirrored(hind.color), mirrored(hind.bump));
+const foreUnR = underMaterial(foreU.color), foreUnL = underMaterial(mirrored(foreU.color));
+const hindUnR = underMaterial(hindU.color), hindUnL = underMaterial(mirrored(hindU.color));
 const wingMats = [foreMatR, foreMatL, hindMatR, hindMatL];
 
-// thorax + tapered abdomen as one lathe, head as a sphere, plain dark brown
+// thorax + tapered abdomen as one lathe, head as a sphere
+const head = new THREE.SphereGeometry(0.058, 14, 12).translate(0, 0.27, 0);
+(head.attributes.uv.array as Float32Array).fill(0.5); // the whole head samples one dark texel on the spine
 const bodyGeo = mergeGeometries([
   new THREE.LatheGeometry(
     [[0, 0.24], [0.05, 0.21], [0.075, 0.12], [0.07, 0.03], [0.05, -0.04], [0.045, -0.18], [0.032, -0.32], [0.015, -0.42], [0, -0.45]].map(([r, y]) => new THREE.Vector2(r, y)),
     18,
   ),
-  new THREE.SphereGeometry(0.058, 14, 12).translate(0, 0.27, 0),
+  head,
 ])!;
-// fuzzy thorax and a ringed abdomen; v runs from the tip (canvas top) to the head end (canvas bottom)
+// a plain black body vanished into the dark page, so it carries red like the reference: the abdomen is ringed
+// red and black under a dark spine, the thorax fuzz turns red at the shoulders where the wings root.
+// v runs from the tip (canvas top) to the head end (canvas bottom); u runs around the body, the back at the centre
 const bodyMap = (() => {
   const c = document.createElement('canvas'); c.width = 128; c.height = 512;
   const g = c.getContext('2d')!;
-  g.fillStyle = '#1b120b'; g.fillRect(0, 0, 128, 512);
-  for (let y = 0; y < 330; y += 40) {
+  g.fillStyle = '#140c08'; g.fillRect(0, 0, 128, 512);
+  for (let y = 0; y < 300; y += 40) {
+    // each segment: a red band at its front that fades into the dark seam behind it
     const r = g.createLinearGradient(0, y, 0, y + 40);
-    r.addColorStop(0, '#120b06'); r.addColorStop(0.55, '#1b120b'); r.addColorStop(1, '#3a2718');
+    r.addColorStop(0, '#0e0705'); r.addColorStop(0.15, '#c8251f'); r.addColorStop(0.75, '#e0392c'); r.addColorStop(1, '#3a0d0a');
     g.fillStyle = r; g.fillRect(0, y, 128, 40);
   }
-  for (let i = 0; i < 900; i++) {
-    const x = Math.random() * 128, y = 330 + Math.random() * 182;
-    g.strokeStyle = `rgba(${90 + Math.random() * 60 | 0},${60 + Math.random() * 30 | 0},${35 + Math.random() * 20 | 0},.55)`;
+  for (let i = 0; i < 1400; i++) {
+    const x = Math.random() * 128, y = 300 + Math.random() * 212, shoulder = Math.abs(x - 64) > 10;
+    g.strokeStyle = shoulder
+      ? `rgba(${200 + Math.random() * 55 | 0},${40 + Math.random() * 50 | 0},${25 + Math.random() * 20 | 0},.7)`
+      : `rgba(${70 + Math.random() * 40 | 0},${45 + Math.random() * 25 | 0},${30 + Math.random() * 15 | 0},.55)`;
     g.lineWidth = 1;
     g.beginPath(); g.moveTo(x, y); g.lineTo(x + rand(-4, 4), y + rand(-9, 9)); g.stroke();
   }
+  // thin soft-edged dark spine down the back; seen from above the red must stay on both sides of it
+  const sp = g.createLinearGradient(56, 0, 72, 0);
+  sp.addColorStop(0, 'rgba(14,7,5,0)'); sp.addColorStop(0.4, 'rgba(14,7,5,.85)'); sp.addColorStop(0.6, 'rgba(14,7,5,.85)'); sp.addColorStop(1, 'rgba(14,7,5,0)');
+  g.fillStyle = sp; g.fillRect(56, 0, 16, 512);
   return tex(c);
 })();
-const bodyMat = new THREE.MeshStandardMaterial({ map: bodyMap, roughness: 0.85 });
+// the map doubles as emissive so the red reads on the dark page; near-black parts emit almost nothing
+const bodyMat = new THREE.MeshStandardMaterial({ map: bodyMap, emissiveMap: bodyMap, emissive: 0xffffff, emissiveIntensity: 0.4, roughness: 0.85 });
 
 /* the follower: one detailed butterfly */
 function makeButterfly() {
@@ -97,16 +121,23 @@ function makeButterfly() {
   const inner = new THREE.Group();
   inner.rotation.x = Math.PI / 2;
   root.add(inner);
-  const foreR = new THREE.Mesh(foreGeoR, foreMatR), foreL = new THREE.Mesh(foreGeoL, foreMatL);
-  const hindR = new THREE.Mesh(hindGeoR, hindMatR), hindL = new THREE.Mesh(hindGeoL, hindMatL);
-  // antennae as thin lit tubes with clubs, glossy black eyes
+  // a wing is two meshes on one geometry: the top face and the underside
+  const wing = (geo: THREE.BufferGeometry, top: THREE.Material, under: THREE.Material) => {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(geo, top), new THREE.Mesh(geo, under));
+    return g;
+  };
+  const foreR = wing(foreGeoR, foreMatR, foreUnR), foreL = wing(foreGeoL, foreMatL, foreUnL);
+  const hindR = wing(hindGeoR, hindMatR, hindUnR), hindL = wing(hindGeoL, hindMatL, hindUnL);
+  // antennae as thin red tubes with clubs, like the reference; glossy black eyes
   const dark = new THREE.MeshStandardMaterial({ color: 0x0b0806, roughness: 0.35 });
+  const red = new THREE.MeshStandardMaterial({ color: 0xe8524a, roughness: 0.4 });
   const club = new THREE.SphereGeometry(0.014, 8, 6), eye = new THREE.SphereGeometry(0.03, 12, 10);
   const ant = (s: number) => {
     const g = new THREE.Group();
     const path = new THREE.CatmullRomCurve3([new THREE.Vector3(0.02 * s, 0.3, -0.02), new THREE.Vector3(0.1 * s, 0.5, -0.08), new THREE.Vector3(0.2 * s, 0.6, -0.12)]);
-    g.add(new THREE.Mesh(new THREE.TubeGeometry(path, 12, 0.006, 5), dark));
-    const c = new THREE.Mesh(club, dark);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(path, 12, 0.006, 5), red));
+    const c = new THREE.Mesh(club, red);
     c.position.set(0.2 * s, 0.6, -0.12);
     g.add(c);
     return g;
@@ -134,21 +165,22 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
   const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 100);
   camera.position.set(0, 0, CAM_Z);
 
-  const hemi = new THREE.HemisphereLight(0xdfeeff, 0x101a33, 0.9);
+  const hemi = new THREE.HemisphereLight(0xfff0e8, 0x1a0a0e, 0.9);
   const sun = new THREE.DirectionalLight(0xffffff, 1.7);
   sun.position.set(4, 6, 5);
-  const rim = new THREE.DirectionalLight(0x4fb8ff, 0.9);
+  const rim = new THREE.DirectionalLight(0xff5a3a, 0.9);
   rim.position.set(-5, 2, -3);
-  const fill = new THREE.DirectionalLight(0x8fb0ff, 0.35); // cool fill from below for depth on the undersides
+  const fill = new THREE.DirectionalLight(0xff9a80, 0.3); // warm fill from below for depth on the undersides
   fill.position.set(-3, -2, 4);
   scene.add(hemi, sun, rim, fill, new THREE.AmbientLight(0xffffff, 0.15));
 
   const applyTheme = () => {
     const light = isLight();
     scene.fog!.color.set(cssVar('--bg'));
-    hemi.groundColor.set(light ? 0xbfd0e8 : 0x101a33);
+    hemi.groundColor.set(light ? 0xe8d0cc : 0x1a0a0e);
     hemi.intensity = light ? 1.2 : 0.9;
-    for (const mt of wingMats) mt.emissiveIntensity = light ? 0.1 : 0.28;
+    for (const mt of wingMats) mt.emissiveIntensity = light ? 0.1 : 0.42;
+    bodyMat.emissiveIntensity = light ? 0.05 : 0.4;
   };
   applyTheme();
   addEventListener('themechange', applyTheme);
@@ -158,7 +190,13 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
   const iFR = new THREE.InstancedMesh(foreGeoR, foreMatR, N), iFL = new THREE.InstancedMesh(foreGeoL, foreMatL, N);
   const iHR = new THREE.InstancedMesh(hindGeoR, hindMatR, N), iHL = new THREE.InstancedMesh(hindGeoL, hindMatL, N);
   const iB = new THREE.InstancedMesh(bodyGeo, bodyMat, N);
-  const inst = [iFR, iFL, iHR, iHL, iB];
+  // undersides share the top faces' instance matrices, so updateSwarm places them for free
+  const under = (im: THREE.InstancedMesh, mat: THREE.Material) => {
+    const u = new THREE.InstancedMesh(im.geometry, mat, N);
+    u.instanceMatrix = im.instanceMatrix;
+    return u;
+  };
+  const inst = [iFR, iFL, iHR, iHL, iB, under(iFR, foreUnR), under(iFL, foreUnL), under(iHR, hindUnR), under(iHL, hindUnL)];
   for (const im of inst) { im.frustumCulled = false; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(im); }
 
   type Member = {

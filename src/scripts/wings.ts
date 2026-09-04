@@ -1,8 +1,10 @@
 /*
   Wing painting on 2D canvas, no three.js here so a scratch page can render it at full size.
-  After the reference photo: an electric-blue swallowtail. Bold dark veins cut the wing into glowing cells, a dark
-  submarginal band carries a row of blue spots, the forewing pales to cyan at the apex, the hindwing is round with
-  white crescents in the scallops and an orange spot at the tornus.
+  After the reference images: a red butterfly on black. Crimson field that glows orange-red mid-wing as if lit from
+  behind, thin dark veins, a black leading edge that widens into the whole apex and carries a row of cream dashes,
+  a black submarginal band with a row of small cream dots, one black eyespot with a white pupil on the forewing,
+  scalloped hindwing with white crescents. Rounded apex and a convex outer margin, no tails.
+  The underside (under = true) follows the closed-wing reference: darker crimson, no backlight, bold black veins.
   Canvas space: wing base at the left edge, head toward the top. paintWing returns a colour canvas and a bump canvas.
 */
 
@@ -13,13 +15,13 @@ export type WingSpec = {
   spokes: Pt[][];       // veins from the base to the margin, leading edge first; consecutive pairs bound a cell
   cross: Pt[][];        // short cross veins
   edge: number[];       // outline segments that carry the dark margin and band
-  fade?: number;        // the segment after them, along which the band thins away
   band: number;         // width of the dark submarginal band
-  spots: number[];      // cells that get a blue spot in the band
-  apex?: Pt;            // pale cyan wash centred here
+  spots: number;        // cells (from the leading edge) that get a cream dot in the band
+  costa?: [number, number]; // black band along the leading edge: width at the base, width at the apex
+  dashes?: number;      // cream dashes inside the black apex (forewing)
   notch?: number[];     // cells whose margin is notched, with a white crescent inside (hindwing)
-  innerDark?: number;   // outline segment along the abdomen that gets the brown field
-  tornus?: Pt;          // orange spot
+  innerDark?: number;   // outline segment along the abdomen that gets the dark field
+  eyespot?: Pt;         // black eyespot with a white pupil
 };
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -47,12 +49,20 @@ const partial = (segs: Seg[], idx: number[]) => {
   return p;
 };
 
-export function paintWing(spec: WingSpec) {
+export function paintWing(spec: WingSpec, under = false) {
   const { w, h, base: [bx, by], band } = spec;
   const color = document.createElement('canvas'), bump = document.createElement('canvas');
   color.width = bump.width = w; color.height = bump.height = h;
   const g = color.getContext('2d')!, k = bump.getContext('2d')!;
   const shape = outline(spec.segs), edge = partial(spec.segs, spec.edge);
+  // point on a segment plus the unit normal pointing into the wing
+  const normalAt = (s: Seg, t: number): [Pt, Pt] => {
+    const p = bez(s, t), p2 = bez(s, Math.min(1, t + 0.01));
+    let nx = -(p2[1] - p[1]), ny = p2[0] - p[0];
+    const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+    if ((bx - p[0]) * nx + (by - p[1]) * ny < 0) { nx = -nx; ny = -ny; }
+    return [p, [nx, ny]];
+  };
   const vein = (c: CanvasRenderingContext2D, v: Pt[]) => {
     c.beginPath(); c.moveTo(v[0][0], v[0][1]); c.quadraticCurveTo(v[1][0], v[1][1], v[2][0], v[2][1]); c.stroke();
   };
@@ -66,9 +76,11 @@ export function paintWing(spec: WingSpec) {
     gr.addColorStop(0, `rgba(${rgb},${a})`); gr.addColorStop(1, `rgba(${rgb},0)`);
     c.fillStyle = gr; c.fillRect(p[0] - r, p[1] - r, r * 2, r * 2);
   };
-  // a polygon with a blurred edge, so dark fields melt into the blue instead of ending in a line
-  const soft = (pts: Pt[], fill: string, blur: number) => {
+  // a polygon with a blurred edge, so dark fields melt into the red instead of ending in a line;
+  // shadowOnly keeps just the blur (the shape itself lands off-canvas), so there is no solid core with a hard edge
+  const soft = (pts: Pt[], fill: string, blur: number, shadowOnly = false) => {
     g.save(); g.shadowColor = fill; g.shadowBlur = blur; g.fillStyle = fill;
+    if (shadowOnly) { g.shadowOffsetX = w * 2; g.translate(-w * 2, 0); } // shadow offsets ignore the transform
     g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
     for (const p of pts.slice(1)) g.lineTo(p[0], p[1]);
     g.closePath(); g.fill(); g.fill(); g.restore();
@@ -80,94 +92,112 @@ export function paintWing(spec: WingSpec) {
     return { s, n, e0, e1, m, width: dist(e0, e1), ang: Math.atan2(e1[1] - e0[1], e1[0] - e0[0]), inward: [(bx - m[0]) / inl, (by - m[1]) / inl] as Pt };
   });
   const along = (c: { m: Pt; inward: Pt }, d: number): Pt => [c.m[0] + c.inward[0] * d, c.m[1] + c.inward[1] * d];
-  // a stroke along the margin segments; on the segment after them it thins to nothing instead of ending in a cut
-  const bandStroke = (c: CanvasRenderingContext2D, rgb: string, a: number, lw: number) => {
-    c.lineCap = 'butt'; c.lineWidth = lw;
-    c.strokeStyle = `rgba(${rgb},${a})`; c.stroke(edge);
-    if (spec.fade === undefined) return;
-    const s = spec.segs[spec.fade], e = bez(s, 0.6);
-    const gr = c.createLinearGradient(s[0][0], s[0][1], e[0], e[1]);
-    gr.addColorStop(0, `rgba(${rgb},${a})`); gr.addColorStop(1, `rgba(${rgb},0)`);
-    c.strokeStyle = gr; c.stroke(partial(spec.segs, [spec.fade]));
-  };
 
   /* ---- colour ---- */
-  // structural blue: the site's first morpho palette, compressed so its deep outer blues sit inside the field the band leaves visible
+  // field: deep crimson at the body, red mid-wing, back to crimson under the band
   const grad = g.createRadialGradient(bx, by, 10, bx, by, w * 0.98);
-  grad.addColorStop(0, '#2fa8ea');
-  grad.addColorStop(0.1, '#19b4ff');
-  grad.addColorStop(0.4, '#1690f8');
-  grad.addColorStop(0.72, '#1560d6');
-  grad.addColorStop(1, '#1236a6');
+  const stops = under
+    ? ['#3a040a', '#8a0c16', '#b8141f', '#c41a22', '#6a0810']
+    : ['#4a050b', '#9c0e1a', '#e02430', '#e62c30', '#8a0a14'];
+  [0, 0.16, 0.42, 0.7, 1].forEach((t, i) => grad.addColorStop(t, stops[i]));
   g.fillStyle = grad; g.fill(shape);
   g.save(); g.clip(shape);
-  if (spec.apex) glow(g, spec.apex, w * 0.46, '110,180,255', 0.4);
-  // each cell glows from its centre, brightest toward the band: the stained-glass look of the photo
-  for (const c of cells) for (const t of [0.35, 0.6, 0.82]) {
-    const p = mid(quad(c.s, t), quad(c.n, t)), r = dist(quad(c.s, t), quad(c.n, t)) * 0.6;
-    glow(g, p, r, '70,150,255', 0.12 + 0.15 * t);
+  if (!under) {
+    // backlight: each cell glows orange-red from its centre, strongest mid-wing, the way the reference is lit from behind
+    for (const c of cells) for (const [t, a] of [[0.38, 0.22], [0.58, 0.42], [0.78, 0.3]] as const) {
+      const p = mid(quad(c.s, t), quad(c.n, t)), r = dist(quad(c.s, t), quad(c.n, t)) * 0.62;
+      glow(g, p, r, '255,120,50', a);
+    }
+    // sheen: a diagonal streak of warm light, the way scales catch it
+    const sheen = g.createLinearGradient(bx, by, w, 0);
+    sheen.addColorStop(0, 'rgba(255,200,150,0)'); sheen.addColorStop(0.35, 'rgba(255,200,150,.16)'); sheen.addColorStop(0.55, 'rgba(255,200,150,0)');
+    g.fillStyle = sheen; g.fillRect(0, 0, w, h);
   }
-  // iridescent sheen: a diagonal streak of pale cyan, the way light catches the scales
-  const sheen = g.createLinearGradient(bx, by, w, 0);
-  sheen.addColorStop(0, 'rgba(200,255,255,0)'); sheen.addColorStop(0.35, 'rgba(200,255,255,.2)'); sheen.addColorStop(0.55, 'rgba(200,255,255,0)');
-  g.fillStyle = sheen; g.fillRect(0, 0, w, h);
   // scales: short strokes radiating from the base
   for (let i = 0; i < 1500; i++) {
     const x = Math.random() * w, y = Math.random() * h, a = Math.atan2(y - by, x - bx), l = rand(5, 14);
-    g.strokeStyle = Math.random() < 0.5 ? 'rgba(200,255,255,.10)' : 'rgba(6,20,90,.12)';
+    g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,170,120,.10)' : 'rgba(50,0,8,.14)';
     g.lineWidth = rand(1, 2.2);
     g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
   }
   // submarginal band: soft dark halo, then the band itself
-  bandStroke(g, '8,12,60', 0.4, band * 2 + 70);
-  bandStroke(g, '7,10,48', 0.93, band * 2);
-  // veins: bold and dark, a soft halo so they read as ridges
-  g.lineCap = 'round';
-  const veinW = w > 900 ? 6 : 5;
-  for (const v of [...spec.spokes, ...spec.cross]) {
-    g.strokeStyle = 'rgba(8,16,70,.42)'; g.lineWidth = veinW * 3.2; vein(g, v);
-    g.strokeStyle = '#0a1238'; g.lineWidth = veinW; vein(g, v);
-  }
-  // thin dark leading edge
   g.lineCap = 'butt';
-  g.strokeStyle = 'rgba(10,8,22,.9)'; g.lineWidth = 18; g.stroke(partial(spec.segs, [0]));
-  // blue spots in the band, one per cell
-  for (const c of spec.spots.map((i) => cells[i])) {
+  g.strokeStyle = 'rgba(30,2,6,.4)'; g.lineWidth = band * 2 + 70; g.stroke(edge);
+  g.strokeStyle = 'rgba(12,2,5,.94)'; g.lineWidth = band * 2; g.stroke(edge);
+  // veins: thin and dark on top, a soft halo so they read as ridges under the light; bold and black underneath
+  g.lineCap = 'round';
+  const veinW = (w > 900 ? 3.5 : 3) * (under ? 2.2 : 1);
+  for (const v of [...spec.spokes, ...spec.cross]) {
+    g.strokeStyle = 'rgba(60,4,10,.4)'; g.lineWidth = veinW * 3.4; vein(g, v);
+    g.strokeStyle = under ? '#120206' : '#2a0308'; g.lineWidth = veinW; vein(g, v);
+  }
+  // leading edge: black band from the base, widening into the whole apex, crimson where it meets the red
+  if (spec.costa) {
+    const [w0, w1] = spec.costa, inner: Pt[] = [];
+    for (let t = 0; t <= 1.0001; t += 0.05) {
+      const [p, n] = normalAt(spec.segs[0], t);
+      const d = w0 + (w1 - w0) * t * t;
+      inner.push([p[0] + n[0] * d, p[1] + n[1] * d]);
+    }
+    const s0 = spec.segs[0][0], apex = spec.segs[0][3];
+    const path: Pt[] = [[s0[0] - 200, s0[1] - 200], [apex[0] + 200, -200], [apex[0] + 200, apex[1] + 220], ...inner.reverse()];
+    soft(path, 'rgba(90,8,20,.85)', 100);
+    soft(path, '#0b0508', 40);
+    // pale patch at the very tip, then cream dashes down the apex just inside the black
+    glow(g, [apex[0] - 40, apex[1] + 40], 110, '255,215,205', 0.5);
+    const n = spec.dashes ?? 0;
+    for (let i = 0; i < n; i++) {
+      const t = 0.62 + 0.3 * (i / n), [p, nrm] = normalAt(spec.segs[0], t);
+      const d = (w0 + (w1 - w0) * t * t) * 0.55, q: Pt = [p[0] + nrm[0] * d, p[1] + nrm[1] * d];
+      const p2 = bez(spec.segs[0], t + 0.02), ang = Math.atan2(p2[1] - p[1], p2[0] - p[0]);
+      ellipse(g, q, 24 + 6 * i, 8, ang, i % 2 ? '#f3d9b8' : '#f8e6cc');
+    }
+  } else {
+    g.lineCap = 'butt';
+    g.strokeStyle = 'rgba(12,4,8,.9)'; g.lineWidth = 18; g.stroke(partial(spec.segs, [0]));
+  }
+  // cream dots in the band, one per cell
+  for (const c of cells.slice(0, spec.spots)) {
     const p = along(c, band * 0.5);
-    const gr = g.createRadialGradient(p[0], p[1], 0, p[0], p[1], c.width * 0.34);
-    gr.addColorStop(0, '#c4fbff'); gr.addColorStop(0.55, '#5fd6ff'); gr.addColorStop(1, '#2f9bff');
-    ellipse(g, p, c.width * 0.34, band * 0.2, c.ang, gr);
+    const gr = g.createRadialGradient(p[0], p[1], 0, p[0], p[1], c.width * 0.18);
+    gr.addColorStop(0, '#fff4e2'); gr.addColorStop(0.6, '#f1cfae'); gr.addColorStop(1, '#c98f74');
+    ellipse(g, p, c.width * 0.18, band * 0.16, c.ang, gr);
   }
   // hindwing: notch the margin between the veins, leave a white crescent inside each notch
   for (const i of spec.notch ?? []) {
-    const c = cells[i], r = c.width * 0.15, p = along(c, -r * 0.55);
+    const c = cells[i], r = c.width * 0.2, p = along(c, -r * 0.55);
     g.save(); g.globalCompositeOperation = 'destination-out';
     g.beginPath(); g.arc(p[0], p[1], r, 0, 7); g.fill(); g.restore();
-    ellipse(g, along(c, r * 0.55 + 12), c.width * 0.24, 8, c.ang, 'rgba(240,252,255,.92)');
+    ellipse(g, along(c, r * 0.55 + 12), c.width * 0.24, 8, c.ang, 'rgba(250,240,230,.92)');
   }
-  // inner margin of the hindwing: brown where it lies against the abdomen
+  // inner margin of the hindwing: near-black where it lies against the abdomen
   if (spec.innerDark !== undefined) {
-    const s = spec.segs[spec.innerDark], inner: Pt[] = [];
-    for (let t = 0; t <= 1.0001; t += 0.05) {
-      const p = bez(s, t), p2 = bez(s, Math.min(1, t + 0.01));
-      let nx = -(p2[1] - p[1]), ny = p2[0] - p[0];
-      const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-      if ((bx - p[0]) * nx + (by - p[1]) * ny < 0) { nx = -nx; ny = -ny; }
-      const d = 30 + 90 * (1 - t) * (1 - t);
-      inner.push([p[0] + nx * d, p[1] + ny * d]);
+    const s = spec.segs[spec.innerDark];
+    // two shadow-only layers, a wide faint one under a narrow dense one, so the field fades into the red with no edge;
+    // widest at the base end (t = 1), thin at the tornus; the closing corners stay outside the wing
+    for (const [k, a, blur] of [[1, 0.55, 120], [0.5, 0.8, 60]] as const) {
+      const inner: Pt[] = [];
+      for (let t = 0; t <= 1.0001; t += 0.05) {
+        const [p, n] = normalAt(s, t);
+        const d = (30 + 90 * t * t) * k;
+        inner.push([p[0] + n[0] * d, p[1] + n[1] * d]);
+      }
+      soft([...inner, [-200, s[3][1] - 100], [s[0][0] - 200, s[0][1] + 200]], `rgba(28,6,8,${a})`, blur, true);
     }
-    soft([...inner, [-200, s[3][1] - 100], [-200, s[0][1] + 200]], 'rgba(28,20,16,.95)', 70);
   }
-  if (spec.tornus) {
-    ellipse(g, spec.tornus, 24, 15, -0.5, '#2a0a05');
-    ellipse(g, spec.tornus, 18, 10, -0.5, '#ff6a1a');
+  // eyespot: thin orange ring, black disc, white pupil set off-centre like a highlight
+  if (spec.eyespot) {
+    const e = spec.eyespot;
+    ellipse(g, e, 52, 40, -0.35, 'rgba(255,110,50,.55)');
+    ellipse(g, e, 42, 32, -0.35, '#0a0407');
+    ellipse(g, [e[0] - 8, e[1] - 6], 11, 8, -0.35, '#f8f0ea');
   }
-  // the thin dark edge, then the brown dusting where the wing meets the body
-  bandStroke(g, '5,6,15', 1, spec.border * 2);
-  glow(g, [bx, by], 170, '30,18,10', 0.95);
+  // the thin dark edge, then the dark dusting where the wing meets the body
+  g.strokeStyle = '#07040a'; g.lineWidth = spec.border * 2; g.stroke(edge);
+  glow(g, [bx, by], 170, '22,6,6', 0.95);
   g.restore();
 
-  /* ---- bump: cells puff up, veins and the band sink ---- */
+  /* ---- bump: cells puff up, veins, the band and the eyespot sink ---- */
   k.fillStyle = '#808080'; k.fillRect(0, 0, w, h);
   k.save(); k.clip(shape);
   for (const c of cells) for (const t of [0.35, 0.6, 0.82]) {
@@ -175,8 +205,10 @@ export function paintWing(spec: WingSpec) {
     glow(k, p, dist(quad(c.s, t), quad(c.n, t)) * 0.55, '255,255,255', 0.35);
   }
   k.lineCap = 'round';
-  for (const v of [...spec.spokes, ...spec.cross]) { k.strokeStyle = 'rgba(0,0,0,.55)'; k.lineWidth = veinW * 1.6; vein(k, v); }
-  bandStroke(k, '0,0,0', 0.25, band * 2);
+  for (const v of [...spec.spokes, ...spec.cross]) { k.strokeStyle = 'rgba(0,0,0,.55)'; k.lineWidth = veinW * 2; vein(k, v); }
+  k.lineCap = 'butt';
+  k.strokeStyle = 'rgba(0,0,0,.25)'; k.lineWidth = band * 2; k.stroke(edge);
+  if (spec.eyespot) glow(k, spec.eyespot, 60, '0,0,0', 0.5);
   k.restore();
   return { color, bump };
 }
@@ -189,44 +221,45 @@ export function mirrored(c: HTMLCanvasElement) {
   return m;
 }
 
+// spoke ends sit on the margin curves (sampled from the beziers), so the band dots and notches land on the edge
 export const FORE: WingSpec = {
-  w: 1024, h: 720, base: [30, 560], border: 14, band: 95, spots: [0, 1, 2, 3, 4, 5], edge: [1, 2], fade: 3, apex: [940, 70],
+  w: 1024, h: 720, base: [30, 560], border: 14, band: 80, spots: 6, edge: [1], costa: [36, 230], dashes: 5, eyespot: [660, 330],
   segs: [
-    [[8, 520], [200, 290], [620, 40], [940, 70]],      // costa to a blunt apex
-    [[940, 70], [1030, 150], [1000, 460], [830, 640]], // outer margin, convex and round, to the tornus
-    [[830, 640], [773, 658], [703, 668], [624, 671]],  // inner margin, the stretch that shows past the hindwing
-    [[624, 671], [440, 678], [212, 649], [8, 600]],    // inner margin back to the base
+    [[8, 520], [200, 330], [560, 60], [900, 70]],      // costa to a rounded apex
+    [[900, 70], [1010, 110], [1000, 520], [820, 650]], // outer margin, convex, to the tornus
+    [[820, 650], [640, 700], [300, 670], [8, 600]],    // inner margin back to the base
     [[8, 600], [4, 570], [4, 540], [8, 520]],
   ],
   spokes: [
-    [[34, 548], [380, 300], [967, 108]],
-    [[34, 552], [420, 330], [988, 194]],
-    [[34, 556], [430, 380], [984, 304]],
-    [[34, 560], [420, 440], [956, 426]],
-    [[34, 566], [400, 500], [905, 539]],
-    [[34, 574], [360, 560], [830, 640]],
-    [[34, 584], [300, 610], [624, 671]],
+    [[34, 548], [380, 300], [915, 79]],
+    [[34, 552], [420, 330], [951, 133]],
+    [[34, 556], [430, 380], [969, 220]],
+    [[34, 560], [420, 440], [969, 326]],
+    [[34, 566], [400, 500], [949, 438]],
+    [[34, 574], [360, 560], [908, 544]],
+    [[34, 584], [300, 610], [820, 650]],
     [[34, 594], [180, 630], [369, 662]],
   ],
   cross: [[[500, 235], [520, 330], [500, 430]]],
 };
 
 export const HIND: WingSpec = {
-  w: 768, h: 768, base: [30, 150], border: 10, band: 80, spots: [0, 1, 2, 3, 4], edge: [1, 2], notch: [0, 1, 2, 3, 4], innerDark: 3, tornus: [185, 625],
+  w: 768, h: 768, base: [30, 150], border: 10, band: 70, spots: 6, edge: [1, 2, 3], notch: [0, 1, 2, 3, 4, 5, 6], innerDark: 3,
   segs: [
     [[8, 130], [200, 30], [540, 20], [680, 150]],      // costa
-    [[680, 150], [790, 290], [770, 520], [640, 640]],  // outer margin, round
-    [[640, 640], [520, 760], [200, 750], [60, 570]],   // lower margin, round, to the tornus
+    [[680, 150], [820, 300], [760, 620], [520, 720]],  // outer margin, one round sweep
+    [[520, 720], [380, 780], [170, 735], [60, 570]],   // lower margin to the tornus
     [[60, 570], [10, 480], [0, 300], [8, 130]],        // inner margin, against the abdomen
   ],
   spokes: [
-    [[34, 146], [420, 150], [738, 269]],
-    [[34, 152], [420, 230], [750, 402]],
-    [[34, 160], [400, 320], [717, 533]],
-    [[34, 170], [360, 400], [640, 640]],
-    [[34, 182], [280, 470], [488, 712]],
-    [[34, 196], [190, 500], [324, 713]],
-    [[34, 220], [90, 460], [163, 658]],
+    [[34, 146], [330, 150], [722, 211]],
+    [[34, 152], [330, 240], [752, 320]],
+    [[34, 158], [310, 330], [743, 454]],
+    [[34, 166], [300, 430], [679, 593]],
+    [[34, 178], [240, 470], [574, 692]],
+    [[34, 195], [150, 470], [380, 745]],
+    [[34, 220], [80, 450], [229, 711]],
+    [[34, 240], [50, 420], [116, 636]],
   ],
   cross: [[[300, 190], [330, 260], [300, 330]]],
 };
