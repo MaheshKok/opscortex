@@ -247,9 +247,8 @@ const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 
 
 <style>
   /* monarch scene: the canvas is fixed and page-wide so the follower can travel with the viewport; it sits under the nav (50) */
-  .hero { position: relative; min-height: 92svh; display: grid; place-items: center; padding-top: clamp(7rem, 18vh, 11rem); padding-bottom: 4rem; overflow: hidden; --accent2: #4f9dff; }
-  :root[data-theme="light"] .hero { --accent2: #1d6fe0; }
-  .hero__glow { position: absolute; inset: 0; background: radial-gradient(60% 38% at 50% 26%, rgba(79, 157, 255, 0.2), transparent 70%), radial-gradient(40% 30% at 80% 20%, rgba(232, 82, 74, 0.1), transparent 70%); }
+  .hero { position: relative; min-height: 92svh; display: grid; place-items: center; padding-top: clamp(7rem, 18vh, 11rem); padding-bottom: 4rem; overflow: hidden; }
+  .hero__glow { position: absolute; inset: 0; background: radial-gradient(60% 38% at 50% 26%, rgba(232, 82, 74, 0.16), transparent 70%), radial-gradient(40% 30% at 80% 20%, rgba(255, 143, 132, 0.08), transparent 70%); }
   .hero__fade { position: absolute; inset: auto 0 0 0; height: 35%; background: linear-gradient(180deg, transparent, var(--bg)); z-index: 1; }
   /* own compositor layer: the scrub moves it every frame and the blurred shadow must not re-rasterize */
   .hero__content { position: relative; z-index: 2; text-shadow: 0 2px 40px var(--bg); will-change: transform, opacity; }
