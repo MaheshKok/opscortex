@@ -5,8 +5,9 @@ import { paintWing, mirrored, FORE, HIND } from './wings';
 /*
   Full-page red butterfly scene on one fixed canvas.
   Hero: a swarm rises from below the fold into a slow drifting cloud; the cursor scatters it.
-  Scroll: the swarm flies off sideways and upward at its own pace; one butterfly leaves it and follows the viewport. Stop scrolling and it lands on
-  whatever is on screen (a heading, a card, a button) until you move again, all the way to the footer.
+  Scroll: the swarm flies off sideways and upward at its own pace; one butterfly leaves it and follows the viewport. Stop scrolling and within two seconds it
+  lands on the edge of a box on screen (a card, a button, a ruled section; a heading when there is no box), pumping its wings slowly
+  until you move again, all the way to the footer.
   Wings are painted on canvas (forewing and hindwing separately), the swarm is instanced: five draw calls.
 */
 
@@ -258,7 +259,8 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
   // appearance links its programs mid-scroll, a ~40ms hitch at the worst moment
   renderer.compile(scene, camera);
 
-  type Perch = { el: Element; fx: number; scrollAt: number };
+  type Edge = 'top' | 'left' | 'right';
+  type Perch = { el: Element; edge: Edge; fx: number; fy: number; scrollAt: number };
   let fActive = false;
   let fMode: 'fly' | 'land' | 'perch' = 'fly';
   // fp is in page pixels (y includes scroll), so the page can run away from the butterfly; it never teleports
@@ -272,16 +274,32 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
   const land = { x0: 0, y0: 0, t0: 0, dur: 1, scrollAt: 0 };
   const fq = new THREE.Quaternion();
 
-  // anything on the page the follower may sit on
-  const candidates = [...document.querySelectorAll('h1, h2, h3, .btn, .card, .eyebrow, blockquote, summary, footer p')];
-  const visibleCandidates = () =>
-    candidates.filter((el) => {
+  // where the follower may sit: the edge of a box first (cards, buttons, chips, ruled sections and rows), and only when
+  // no box edge is in view, on top of a heading or a line of text
+  const boxes = [...document.querySelectorAll('.card, .btn, .tag, [class*="border"]')];
+  const texts = [...document.querySelectorAll('h1, h2, h3, .eyebrow, blockquote, summary, footer p')].filter((el) => !boxes.includes(el));
+  const visiblePerches = () => {
+    const out: [Element, Edge][] = [];
+    for (const el of boxes) {
       const r = el.getBoundingClientRect();
-      return r.width > 60 && r.top > 90 && r.bottom < H - 30;
-    });
+      if (r.width < 60) continue;
+      if (r.top > 90 && r.top < H - 30) out.push([el, 'top']);
+      // the sides too, when the box is wholly on screen and not a full-width band
+      if (r.top > 90 && r.bottom < H - 30 && r.height > 80 && r.width < W * 0.7) out.push([el, 'left'], [el, 'right']);
+    }
+    if (out.length) return out;
+    for (const el of texts) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 60 && r.top > 90 && r.bottom < H - 30) out.push([el, 'top']);
+    }
+    return out;
+  };
   const perchPoint = (p: Perch) => {
     const r = p.el.getBoundingClientRect();
-    return { x: r.left + r.width * p.fx, y: r.top - 6 + scrollY };
+    return {
+      x: p.edge === 'left' ? r.left : p.edge === 'right' ? r.right : r.left + r.width * p.fx,
+      y: scrollY + (p.edge === 'top' ? r.top - 6 : r.top + r.height * p.fy),
+    };
   };
   const inView = (el: Element) => { const r = el.getBoundingClientRect(); return r.bottom > 40 && r.top < H - 20; };
 
@@ -391,7 +409,7 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
         fMode = 'fly'; perch = null;
         fv.x = (dx / d) * 10; fv.y = (dy / d) * 10 - 8; // heading only: away from the pointer and up; the calm cap sets the pace
         calmUntil = now + 2500;
-        lastScrollT = now + 1200; // counts as a disturbance: it will not land again for ~2.6 s
+        lastScrollT = now + 1200; // counts as a disturbance: it will not land again for ~1.6 s
       }
     }
 
@@ -405,14 +423,15 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
       if (sp > cap) { fv.x *= cap / sp; fv.y *= cap / sp; }
       fp.x += fv.x; fp.y += fv.y;
       const onScreen = Math.abs(fp.y - sy - H * 0.4) < H * 0.5;
-      if (now - lastScrollT > 1400 && onScreen) {
-        const vis = visibleCandidates();
+      // stop scrolling and it is sitting inside two seconds: 0.4 s of quiet, then a landing of 0.6 to 1.5 s
+      if (now - lastScrollT > 400 && onScreen) {
+        const vis = visiblePerches();
         if (vis.length) {
-          const el = vis[Math.floor(Math.random() * vis.length)];
-          perch = { el, fx: rand(0.1, 0.9), scrollAt: sy };
+          const [el, edge] = vis[Math.floor(Math.random() * vis.length)];
+          perch = { el, edge, fx: rand(0.1, 0.9), fy: rand(0.2, 0.8), scrollAt: sy };
           const pt = perchPoint(perch);
           land.x0 = fp.x; land.y0 = fp.y; land.t0 = now; land.scrollAt = sy;
-          land.dur = clamp(Math.hypot(pt.x - fp.x, pt.y - fp.y) * 3.4, 1800, 3600);
+          land.dur = clamp(Math.hypot(pt.x - fp.x, pt.y - fp.y) * 1.2, 600, 1500);
           fMode = 'land';
         }
       }
@@ -441,16 +460,15 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
     shadow.position.set(fb.root.position.x - FS * 0.08, fb.root.position.y - FS * 0.12, FZ - 0.05);
     shadow.material.opacity += (settle * 0.5 - shadow.material.opacity) * 0.12;
     const speed = Math.hypot(fv.x, fv.y);
+    // sitting, it keeps pumping its wings slowly, open to nearly closed about every two seconds
+    const sitFore = 0.55 + 0.4 * Math.sin(t * 3), sitHind = 0.5 + 0.36 * Math.sin(t * 3 - 0.35);
     let fore: number, hind: number;
     if (fMode === 'perch') {
-      // always the same pose: head up, wings spread toward the viewer, a slow close-and-open every few seconds
+      // always the same pose: head up, wings toward the viewer
       dummy.position.copy(fb.root.position);
       dummy.lookAt(tmp.set(0, 1, 0.55).add(fb.root.position));
       fq.slerp(dummy.quaternion, 0.1);
-      const ph = t % 7;
-      const fold = ph > 5.5 ? Math.sin((Math.PI * (ph - 5.5)) / 1.5) : 0;
-      fore = THREE.MathUtils.lerp(0.2 + 0.08 * Math.sin(t * 1.4), 1.05, fold);
-      hind = fore * 0.9;
+      fore = sitFore; hind = sitHind;
     } else {
       if (speed > 0.4) {
         dummy.position.copy(fb.root.position);
@@ -467,8 +485,8 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
           dummy.position.copy(fb.root.position);
           dummy.lookAt(tmp.set(0, 1, 0.55).add(fb.root.position));
           fq.slerp(dummy.quaternion, 0.08 + 0.2 * k);
-          fore = THREE.MathUtils.lerp(fore, 0.2, k);
-          hind = THREE.MathUtils.lerp(hind, 0.18, k);
+          fore = THREE.MathUtils.lerp(fore, sitFore, k);
+          hind = THREE.MathUtils.lerp(hind, sitHind, k);
         }
       }
     }
