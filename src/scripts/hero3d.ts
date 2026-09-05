@@ -291,24 +291,19 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
   // no box edge is in view, on top of a heading or a line of text
   const boxes = [...document.querySelectorAll('.card, .btn, .tag, [class*="border"]')];
   const texts = [...document.querySelectorAll('h1, h2, h3, .eyebrow, blockquote, summary, footer p')].filter((el) => !boxes.includes(el));
-  const visiblePerches = (f: Follower) => {
-    // spots the other two already hold are off the list
-    const free = (el: Element, edge: Edge) => !followers.some((o) => o !== f && o.perch !== null && o.perch.el === el && o.perch.edge === edge);
+  const visiblePerches = () => {
     const out: [Element, Edge][] = [];
     for (const el of boxes) {
       const r = el.getBoundingClientRect();
       if (r.width < 60) continue;
-      if (r.top > 90 && r.top < H - 30 && free(el, 'top')) out.push([el, 'top']);
+      if (r.top > 90 && r.top < H - 30) out.push([el, 'top']);
       // the sides too, when the box is wholly on screen and not a full-width band
-      if (r.top > 90 && r.bottom < H - 30 && r.height > 80 && r.width < W * 0.7) {
-        if (free(el, 'left')) out.push([el, 'left']);
-        if (free(el, 'right')) out.push([el, 'right']);
-      }
+      if (r.top > 90 && r.bottom < H - 30 && r.height > 80 && r.width < W * 0.7) out.push([el, 'left'], [el, 'right']);
     }
     if (out.length) return out;
     for (const el of texts) {
       const r = el.getBoundingClientRect();
-      if (r.width > 60 && r.top > 90 && r.bottom < H - 30 && free(el, 'top')) out.push([el, 'top']);
+      if (r.width > 60 && r.top > 90 && r.bottom < H - 30) out.push([el, 'top']);
     }
     return out;
   };
@@ -444,14 +439,19 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
       const onScreen = Math.abs(fp.y - sy - H * 0.4) < H * 0.5;
       // stop scrolling and it is sitting inside two seconds: 0.3 s of quiet, then an unhurried landing of 1.1 to 1.7 s
       if (now - lastScrollT > 300 && now > f.quietUntil && onScreen) {
-        const vis = visiblePerches(f);
+        const vis = visiblePerches();
         if (vis.length) {
           const [el, edge] = vis[Math.floor(Math.random() * vis.length)];
-          f.perch = { el, edge, fx: rand(0.1, 0.9), fy: rand(0.2, 0.8), scrollAt: sy };
-          const pt = perchPoint(f.perch);
-          land.x0 = fp.x; land.y0 = fp.y; land.t0 = now; land.scrollAt = sy;
-          land.dur = clamp(Math.hypot(pt.x - fp.x, pt.y - fp.y) * 2.2, 1100, 1700);
-          f.mode = 'land';
+          const cand: Perch = { el, edge, fx: rand(0.1, 0.9), fy: rand(0.2, 0.8), scrollAt: sy };
+          const pt = perchPoint(cand);
+          // within 120 px of where another one sits or is heading (neighbouring card borders nearly touch): pick again next frame
+          const crowded = followers.some((o) => { if (o === f || !o.perch) return false; const q = perchPoint(o.perch); return Math.hypot(q.x - pt.x, q.y - pt.y) < 120; });
+          if (!crowded) {
+            f.perch = cand;
+            land.x0 = fp.x; land.y0 = fp.y; land.t0 = now; land.scrollAt = sy;
+            land.dur = clamp(Math.hypot(pt.x - fp.x, pt.y - fp.y) * 2.2, 1100, 1700);
+            f.mode = 'land';
+          }
         }
       }
     } else if (f.mode === 'land' && f.perch) {
