@@ -5,7 +5,7 @@ import { paintWing, mirrored, FORE, HIND } from './wings';
 /*
   Full-page red butterfly scene on one fixed canvas.
   Hero: a swarm rises from below the fold into a slow drifting cloud; the cursor scatters it.
-  Scroll: the swarm flies off sideways and upward at its own pace; three butterflies leave it and follow the viewport. Stop scrolling and within two seconds
+  Scroll: the swarm flies off sideways and upward at its own pace; three butterflies leave it and follow the viewport. Stop scrolling and within four seconds
   they land on the edges of the boxes on screen (cards, buttons, ruled sections; headings when there is no box), pumping their wings
   slowly until you move again, all the way to the footer.
   Wings are painted on canvas (forewing and hindwing separately), the swarm is instanced: five draw calls.
@@ -437,8 +437,8 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
       if (sp > cap) { fv.x *= cap / sp; fv.y *= cap / sp; }
       fp.x += fv.x; fp.y += fv.y;
       const onScreen = Math.abs(fp.y - sy - H * 0.4) < H * 0.5;
-      // stop scrolling and it is sitting inside two seconds: 0.3 s of quiet, then an unhurried landing of 1.1 to 1.7 s
-      if (now - lastScrollT > 300 && now > f.quietUntil && onScreen) {
+      // stop scrolling and it is sitting inside four seconds: 0.5 s of quiet, then a slow landing of 2.2 to 3.5 s
+      if (now - lastScrollT > 500 && now > f.quietUntil && onScreen) {
         const vis = visiblePerches();
         if (vis.length) {
           const [el, edge] = vis[Math.floor(Math.random() * vis.length)];
@@ -449,7 +449,7 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
           if (!crowded) {
             f.perch = cand;
             land.x0 = fp.x; land.y0 = fp.y; land.t0 = now; land.scrollAt = sy;
-            land.dur = clamp(Math.hypot(pt.x - fp.x, pt.y - fp.y) * 2.2, 1100, 1700);
+            land.dur = clamp(Math.hypot(pt.x - fp.x, pt.y - fp.y) * 4.4, 2200, 3500);
             f.mode = 'land';
           }
         }
