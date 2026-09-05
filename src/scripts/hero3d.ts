@@ -5,9 +5,9 @@ import { paintWing, mirrored, FORE, HIND } from './wings';
 /*
   Full-page red butterfly scene on one fixed canvas.
   Hero: a swarm rises from below the fold into a slow drifting cloud; the cursor scatters it.
-  Scroll: the swarm flies off sideways and upward at its own pace; three butterflies leave it and follow the viewport. Stop scrolling and within four seconds
-  they land on the edges of the boxes on screen (cards, buttons, ruled sections; headings when there is no box), pumping their wings
-  slowly until you move again, all the way to the footer.
+  Scroll: the swarm flies off sideways and upward at its own pace; one butterfly leaves it and follows the viewport. Stop scrolling and it glides down to
+  a box edge close by (a card, a button, a ruled section; a heading when there is no box) and sits there pumping its wings slowly
+  until you move again, all the way to the footer.
   Wings are painted on canvas (forewing and hindwing separately), the swarm is instanced: five draw calls.
 */
 
@@ -237,9 +237,10 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
   let dispersed = false, disperseAt = 0, allGone = false;
 
   /* ---------- followers ---------- */
-  // three butterflies leave the swarm and follow the viewport, each with its own hover slot, perch and wing rhythm
-  const FZ = 0.5, FS = 0.42, NF = 3;
+  // butterflies that leave the swarm and follow the viewport; NF is the only knob, everything below is per butterfly
+  const FZ = 0.5, FS = 0.42, NF = 1;
   const F_SPEED = 700; // px/s, about the swarm's cruise at this depth
+  const GLIDE_SPEED = 220; // px/s, top speed of the landing glide; it slows further as it closes on the spot
   const CALM_SPEED = 240; // pace right after a spook, eased back up to F_SPEED over 2.5 s
   type Edge = 'top' | 'left' | 'right';
   type Perch = { el: Element; edge: Edge; fx: number; fy: number; scrollAt: number };
@@ -271,13 +272,13 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
       active: false,
       mode: 'fly' as 'fly' | 'land' | 'perch',
       // hover slot: fanned out around the chosen side so they never stack
-      side: hoverSide + (i - 1) * 0.1, lift: (i - 1) * 0.1,
+      side: hoverSide + (i - (NF - 1) / 2) * 0.1, lift: (i - (NF - 1) / 2) * 0.1,
       // fp is in page pixels (y includes scroll), so the page can run away from a butterfly; it never teleports
       fp: { x: follow ? (enterFrom === 'left' ? -W * (0.15 + 0.1 * i) : W * (1.15 + 0.1 * i)) : W * 0.75, y: H * (0.3 + 0.1 * i) },
       fv: { x: 0, y: 0 },
       calmUntil: 0, quietUntil: 0,
       perch: null as Perch | null,
-      land: { x0: 0, y0: 0, t0: 0, dur: 1, scrollAt: 0 },
+      landScrollAt: 0,
       fq: new THREE.Quaternion(),
       phase: i * 2.1, // wing rhythm offset, so the three never beat in step
     };
@@ -390,7 +391,7 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
   };
 
   const updateFollower = (f: Follower, t: number, dt: number, now: number, sy: number) => {
-    const { fb, fp, fv, land } = f;
+    const { fb, fp, fv } = f;
     if (!f.active) {
       if (follow) {
         // no swarm here: it flies in from the edge as soon as the page is up
@@ -415,7 +416,9 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
     }
 
     if (f.mode === 'perch' && f.perch && (Math.abs(sy - f.perch.scrollAt) > 80 || !inView(f.perch.el))) { f.mode = 'fly'; f.perch = null; }
-    if (f.mode === 'land' && Math.abs(sy - land.scrollAt) > 40) { f.mode = 'fly'; f.perch = null; }
+    if (f.mode === 'land' && Math.abs(sy - f.landScrollAt) > 40) { f.mode = 'fly'; f.perch = null; }
+    // how close it is to its spot, 0 far to 1 there: the head-up turn, the slow wingbeat and the shadow all come in over the last 260 px
+    let near = 0;
     // the cursor coming onto it (perched, or about to) spooks it: off away from the pointer, and no settling for a while
     if (f.mode !== 'fly') {
       const dx = fp.x - mouse.x, dy = fp.y - sy - mouse.y, d = Math.hypot(dx, dy) || 1;
@@ -437,45 +440,48 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
       if (sp > cap) { fv.x *= cap / sp; fv.y *= cap / sp; }
       fp.x += fv.x; fp.y += fv.y;
       const onScreen = Math.abs(fp.y - sy - H * 0.4) < H * 0.5;
-      // stop scrolling and it is sitting inside four seconds: 0.5 s of quiet, then a slow landing of 2.2 to 3.5 s
+      // stop scrolling and after 0.5 s of quiet it picks a spot close by
       if (now - lastScrollT > 500 && now > f.quietUntil && onScreen) {
         const vis = visiblePerches();
         if (vis.length) {
-          const [el, edge] = vis[Math.floor(Math.random() * vis.length)];
-          const cand: Perch = { el, edge, fx: rand(0.1, 0.9), fy: rand(0.2, 0.8), scrollAt: sy };
-          const pt = perchPoint(cand);
-          // within 120 px of where another one sits or is heading (neighbouring card borders nearly touch): pick again next frame
-          const crowded = followers.some((o) => { if (o === f || !o.perch) return false; const q = perchPoint(o.perch); return Math.hypot(q.x - pt.x, q.y - pt.y) < 120; });
-          if (!crowded) {
-            f.perch = cand;
-            land.x0 = fp.x; land.y0 = fp.y; land.t0 = now; land.scrollAt = sy;
-            land.dur = clamp(Math.hypot(pt.x - fp.x, pt.y - fp.y) * 4.4, 2200, 3500);
-            f.mode = 'land';
-          }
+          // each edge at the point nearest to where it hovers, then one of the three closest, so it does not always take the same one
+          const close = vis
+            .map(([el, edge]) => {
+              const r = el.getBoundingClientRect();
+              const c: Perch = { el, edge, fx: clamp((fp.x - r.left) / r.width, 0.1, 0.9), fy: clamp((fp.y - sy - r.top) / r.height, 0.2, 0.8), scrollAt: sy };
+              const q = perchPoint(c);
+              return { c, d: Math.hypot(q.x - fp.x, q.y - fp.y) };
+            })
+            .sort((a, b) => a.d - b.d)
+            .slice(0, 3);
+          f.perch = close[Math.floor(Math.random() * close.length)].c;
+          f.landScrollAt = sy;
+          f.mode = 'land';
         }
       }
     } else if (f.mode === 'land' && f.perch) {
-      const u = clamp((now - land.t0) / land.dur, 0, 1);
-      const e = easeInOut(u);
+      // the same steering as flight, aimed at the spot, with a top speed that falls as it closes in: no hop, no halt, it settles
       const pt = perchPoint(f.perch);
-      // arc: lift above the straight line, then settle
-      const mx = (land.x0 + pt.x) / 2, my = Math.min(land.y0, pt.y) - H * 0.12;
-      const x = (1 - e) ** 2 * land.x0 + 2 * (1 - e) * e * mx + e * e * pt.x;
-      const y = (1 - e) ** 2 * land.y0 + 2 * (1 - e) * e * my + e * e * pt.y;
-      fv.x = x - fp.x; fv.y = y - fp.y;
-      fp.x = x; fp.y = y;
-      if (u >= 1) { f.mode = 'perch'; f.perch.scrollAt = sy; }
+      const dx = pt.x - fp.x, dy = pt.y - fp.y, d = Math.hypot(dx, dy);
+      fv.x = (fv.x + dx * 0.012) * 0.9;
+      fv.y = (fv.y + dy * 0.012) * 0.9;
+      const cap = Math.min(GLIDE_SPEED, 40 + d * 1.6) * dt, sp = Math.hypot(fv.x, fv.y);
+      if (sp > cap) { fv.x *= cap / sp; fv.y *= cap / sp; }
+      fp.x += fv.x; fp.y += fv.y;
+      near = clamp(1 - d / 260, 0, 1);
+      if (d < 4) { f.mode = 'perch'; f.perch.scrollAt = sy; }
     } else if (f.mode === 'perch' && f.perch) {
       const pt = perchPoint(f.perch);
       fp.x += (pt.x - fp.x) * 0.3; fp.y += (pt.y - fp.y) * 0.3;
       fv.x = fv.y = 0;
+      near = 1;
     }
 
     /* pose */
     const s = wpp(FZ);
     fb.root.position.set((fp.x - W / 2) * s, (H / 2 - (fp.y - sy)) * s, FZ);
-    // shadow: down-left of it (the sun is up-right), fading in over the last stretch of the landing
-    const settle = f.mode === 'perch' ? 1 : f.mode === 'land' ? clamp(((now - land.t0) / land.dur - 0.7) / 0.3, 0, 1) : 0;
+    // shadow: down-left of it (the sun is up-right), fading in over the last 100 px of the landing
+    const settle = clamp((near - 0.6) / 0.4, 0, 1);
     f.shadow.position.set(fb.root.position.x - FS * 0.08, fb.root.position.y - FS * 0.12, FZ - 0.05);
     f.shadow.material.opacity += (settle * 0.5 - f.shadow.material.opacity) * 0.12;
     const speed = Math.hypot(fv.x, fv.y);
@@ -499,15 +505,12 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
       fore = 0.7 + 0.6 * Math.sin(t * 19 + f.phase);
       hind = 0.62 + 0.5 * Math.sin(t * 19 + f.phase - 0.45);
       if (f.mode === 'land') {
-        const u = clamp((now - land.t0) / land.dur, 0, 1);
-        if (u > 0.8) {
-          const k = (u - 0.8) / 0.2;
-          dummy.position.copy(fb.root.position);
-          dummy.lookAt(tmp.set(0, 1, 0.55).add(fb.root.position));
-          f.fq.slerp(dummy.quaternion, 0.08 + 0.2 * k);
-          fore = THREE.MathUtils.lerp(fore, sitFore, k);
-          hind = THREE.MathUtils.lerp(hind, sitHind, k);
-        }
+        // a weak pull toward the head-up pose from the start, strong by the time it arrives; the wingbeat eases into the sitting rhythm the same way
+        dummy.position.copy(fb.root.position);
+        dummy.lookAt(tmp.set(0, 1, 0.55).add(fb.root.position));
+        f.fq.slerp(dummy.quaternion, 0.04 + 0.24 * near);
+        fore = THREE.MathUtils.lerp(fore, sitFore, near);
+        hind = THREE.MathUtils.lerp(hind, sitHind, near);
       }
     }
     fb.root.quaternion.copy(f.fq);
