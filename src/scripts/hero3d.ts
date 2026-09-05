@@ -442,15 +442,15 @@ function init(canvas: HTMLCanvasElement, follow: boolean, enterFrom: 'left' | 'r
       if (sp > cap) { fv.x *= cap / sp; fv.y *= cap / sp; }
       fp.x += fv.x; fp.y += fv.y;
       const onScreen = Math.abs(fp.y - sy - H * 0.4) < H * 0.5;
-      // stop scrolling and it is sitting inside two seconds: 0.4 s of quiet, then a landing of 0.6 to 1.5 s
-      if (now - lastScrollT > 400 && now > f.quietUntil && onScreen) {
+      // stop scrolling and it is sitting inside two seconds: 0.3 s of quiet, then an unhurried landing of 1.1 to 1.7 s
+      if (now - lastScrollT > 300 && now > f.quietUntil && onScreen) {
         const vis = visiblePerches(f);
         if (vis.length) {
           const [el, edge] = vis[Math.floor(Math.random() * vis.length)];
           f.perch = { el, edge, fx: rand(0.1, 0.9), fy: rand(0.2, 0.8), scrollAt: sy };
           const pt = perchPoint(f.perch);
           land.x0 = fp.x; land.y0 = fp.y; land.t0 = now; land.scrollAt = sy;
-          land.dur = clamp(Math.hypot(pt.x - fp.x, pt.y - fp.y) * 1.2, 600, 1500);
+          land.dur = clamp(Math.hypot(pt.x - fp.x, pt.y - fp.y) * 2.2, 1100, 1700);
           f.mode = 'land';
         }
       }
