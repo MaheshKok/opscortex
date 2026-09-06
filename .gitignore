@@ -5,3 +5,7 @@ dist/
 
 .claude/
 .ruff_cache/
+
+scrollcraft/
+lab/
+design/
