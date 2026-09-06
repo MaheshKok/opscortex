@@ -11,7 +11,7 @@
   --muted: #8f8f99;
   --dim: #5b5b64;
   --accent: #e8524a;
-  --accent2: #ff8f84;
+  --accent2: #f73938;
   --glow: rgba(232, 82, 74, 0.35);
   --card-a: rgba(255, 255, 255, 0.045);
   --card-b: rgba(255, 255, 255, 0.012);
@@ -38,7 +38,7 @@
   --muted: #62626b;
   --dim: #a3a3aa;
   --accent: #e04a42;
-  --accent2: #d43d35;
+  --accent2: #f73938;
   --glow: rgba(224, 74, 66, 0.3);
   --card-a: #ffffff;
   --card-b: #fbfaf7;
@@ -202,7 +202,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .acc[open] summary .plus::after { transform: rotate(0); }
 .acc ul { margin: 0 0 1.5rem 3.25ch; padding: 0; list-style: none; display: grid; gap: .5rem; color: var(--muted); }
 .acc li { display: flex; gap: .8rem; align-items: baseline; }
-.acc li::before { content: "→"; color: var(--accent); font-family: var(--mono); font-size: .8rem; }
+.acc li::before { content: "→"; color: var(--accent2); font-family: var(--mono); font-size: .8rem; }
 
 /* ---------- forms ---------- */
 .input { width: 100%; padding: .95rem 1.1rem; border-radius: 12px; background: var(--surface); border: 1px solid var(--line2); color: var(--text); outline: none; transition: border-color .3s, box-shadow .3s; }
