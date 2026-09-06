@@ -22,8 +22,8 @@ const path = Astro.url.pathname;
     <meta name="description" content={description} />
     <meta property="og:title" content={`${title} · OpsCortex`} />
     <meta property="og:description" content={description} />
-    {/* TODO: drop your logo at public/logo.png — intentionally missing for now */}
-    <link rel="icon" href="/logo.png" />
+    <link rel="icon" href="/images/brand/logo-light.png" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/images/brand/logo-dark.png" media="(prefers-color-scheme: dark)" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -45,7 +45,7 @@ const path = Astro.url.pathname;
     <header class="nav" id="nav">
       <div class="wrap nav__in">
         <a href="/" class="brand">
-          <img src="/logo.png" alt="OpsCortex owl" width="32" height="32" />
+          <img class="brand__logo--light" src="/images/brand/logo-light.png" alt="OpsCortex owl" width="32" height="32" /><img class="brand__logo--dark" src="/images/brand/logo-dark.png" alt="OpsCortex owl" width="32" height="32" />
           <span>OpsCortex</span>
         </a>
         <nav aria-label="Primary">
@@ -66,7 +66,7 @@ const path = Astro.url.pathname;
     <footer class="border-t border-[var(--line)] mt-24">
       <div class="wrap py-16 grid gap-12 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
         <div>
-          <a href="/" class="brand"><img src="/logo.png" alt="OpsCortex owl" width="32" height="32" /><span>OpsCortex</span></a>
+          <a href="/" class="brand"><img class="brand__logo--light" src="/images/brand/logo-light.png" alt="OpsCortex owl" width="32" height="32" /><img class="brand__logo--dark" src="/images/brand/logo-dark.png" alt="OpsCortex owl" width="32" height="32" /><span>OpsCortex</span></a>
           <p class="text-[var(--muted)] mt-5 max-w-xs">Courses and a weekly letter for engineers who carry the pager.</p>
         </div>
         <div>
@@ -104,3 +104,9 @@ const path = Astro.url.pathname;
     <script src="../scripts/motion.ts"></script>
   </body>
 </html>
+
+<style>
+  .brand__logo--light { display: none; }
+  :global([data-theme="light"]) .brand__logo--light { display: block; }
+  :global([data-theme="light"]) .brand__logo--dark { display: none; }
+</style>
