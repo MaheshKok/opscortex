@@ -1,0 +1,61 @@
+{
+  "conversation": "https://chatgpt.com/c/6a9f3594-3504-83eb-a563-7bc38b932482",
+  "attachment": "behind_the_click_reference_lookbook.html",
+  "attachment_bytes": 29428,
+  "attachment_sha256": "4d52b8817ac1370bdb413ca5d79f2c3bf24d37592f6aafd2619a13b14222fb25",
+  "note": "Original supplied HTML preserved byte-for-byte. Reference media for research only; not licensed production artwork.",
+  "images": [
+    {
+      "index": 1,
+      "url": "https://assets.awwwards.com/awards/submissions/2024/06/6679694854f32131923081.jpg",
+      "description": "Igloo Inc website: a softly lit sculptural igloo in a restrained grey landscape.",
+      "file": "reference-01.jpg",
+      "bytes": 727006,
+      "mime": "image/jpeg",
+      "sha256": "d4e9777b9464d1ffbe514efefcbad3ea5d6fd52615f1360aea752ac249b4e8da",
+      "status": "downloaded"
+    },
+    {
+      "index": 2,
+      "url": "https://assets.awwwards.com/awards/element/2023/12/65851dd5eed08679280585.png",
+      "description": "Opal Tadpole product website: dark webcam detail beside a concise benefit headline and purchase navigation.",
+      "file": "reference-02.png",
+      "bytes": 320989,
+      "mime": "image/png",
+      "sha256": "cb39ea4fe927a70a6bbc193a89ba529309cb6d2037debaad67608ab6d1712a6d",
+      "status": "downloaded"
+    },
+    {
+      "index": 3,
+      "url": "https://assets.awwwards.com/awards/images/2025/03/InmersiveGardenWebsiteCover3.jpg",
+      "description": "Immersive Garden case-study cover: a white studio mark over a dark, tactile sculptural composition.",
+      "file": "reference-03.jpg",
+      "bytes": 102226,
+      "mime": "image/jpeg",
+      "sha256": "cb1840c35f83e3cb7edcaa379c838bedce47952b597dda4ce70e432dd3e91128",
+      "status": "downloaded"
+    },
+    {
+      "index": 4,
+      "url": "https://www.apple.com/v/airpods-pro/s/images/overview/audio-performance/audio_airpods_pro_guts__gbhfrhkjpjyy_large.png",
+      "description": "Apple AirPods Pro product anatomy image exposing internal components.",
+      "file": "reference-04.png",
+      "bytes": 180392,
+      "mime": "image/png",
+      "sha256": "571963949d206f36a458d75a208ba0acece6ca030f0ace3b45d2b99344082e05",
+      "status": "downloaded"
+    },
+    {
+      "index": 5,
+      "url": "https://www.gstatic.com/marketing-cms/assets/images/19/43/b476c0984f2da3b2faa1a7f588ce/server-aisles-in-our-new-albany-data-center-building-in-central-ohio.jpg%3Dn-w2560-h1920-fcrop64%3D1%2C00000000ffffffff-rw",
+      "description": "Google data centre photograph showing server aisles, overhead infrastructure and human-scale proportions.",
+      "status": "downloaded-from-official-gallery",
+      "error": "HTTP Error 404: Not Found",
+      "recovered_url": "https://www.gstatic.com/marketing-cms/assets/images/19/43/b476c0984f2da3b2faa1a7f588ce/server-aisles-in-our-new-albany-data-center-building-in-central-ohio.jpg",
+      "recovered_from": "https://datacenters.google/discover-more/photo-gallery/",
+      "file": "reference-05.jpg",
+      "bytes": 11326094,
+      "sha256": "dca1cc4d899fb8fbbf687a24931698e4a9580543e98d2c249bda3bc02df80d9e"
+    }
+  ]
+}

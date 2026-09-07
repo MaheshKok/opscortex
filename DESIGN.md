@@ -234,3 +234,23 @@ or add unrelated stock illustration styles to a routine section.
 For documentation-only edits, validate referenced paths, tokens, and examples;
 a site build or screenshot run is unnecessary unless runtime files changed.
 
+
+
+## Behind the Click visual prototype
+
+The user authorized a new look-and-feel prototype at `/experience` on the isolated
+`codex/behind-the-click` branch. Its short cinematic opening, mission reveal,
+prepared recovery simulation and editorial course close intentionally differ
+from the existing butterfly homepage composition. The prototype uses its own
+scoped page motion and native scrolling; it does not load a second global Lenis
+loop. Existing homepage and butterfly artwork remain intact.
+
+Keep supplied owl logos, three font families and `--accent2: #f73938` in both
+themes. Original Blender imagery may retain a dark photographic exposure in
+both themes; ordinary content and controls follow theme tokens. The 3D scene
+is decorative; course information, navigation and simulation state live in HTML.
+Do not present the recovery demonstration as a live Kubernetes lab.
+
+The current scope tests appearance and interaction, not paid enrollment or
+completed course delivery. No placeholder testimonials or simulated waitlist
+success should be added to this preview.
