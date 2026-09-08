@@ -254,3 +254,10 @@ Do not present the recovery demonstration as a live Kubernetes lab.
 The current scope tests appearance and interaction, not paid enrollment or
 completed course delivery. No placeholder testimonials or simulated waitlist
 success should be added to this preview.
+
+The approved connected slice replaces the isolated opt-in aisle viewer with one
+scroll-controlled application → Docker image → Kubernetes Pods scene. Real
+chapter links and captions remain HTML. Static illustrations are the default;
+activate the pinned canvas only after a rendered frame is available. Reduced
+motion, no JavaScript, load failure and lost WebGL context must keep all three
+chapters readable in normal document flow.

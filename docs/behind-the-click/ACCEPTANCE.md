@@ -1,5 +1,7 @@
 # Visual prototype acceptance
 
+Phase 1 history. Current connected slice: [CONNECTED-ACCEPTANCE.md](CONNECTED-ACCEPTANCE.md).
+
 Scope: four-beat look-and-feel prototype at `/experience`, isolated branch `codex/behind-the-click`, based on `9d07dc9`. Original homepage remains unchanged. Root owns final acceptance.
 
 ## Delivered

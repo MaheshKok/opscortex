@@ -68,23 +68,51 @@ const courses = courseIds
         </div>
       </section>
 
-      <section id="mission" class="mission section" data-sc-act="flow" aria-labelledby="mission-title">
-        <div class="wrap mission__grid">
-          <div class="mission__copy">
-            <h2 id="mission-title" class="display">Get this application ready for <em>opening night.</em></h2>
-            <p class="lead">It works on your laptop. Now make it ready for everyone else.</p>
-            <p class="mission__note mono">Sample local application</p>
-          </div>
-          <div class="app-stage" data-sc-verify-state="camera=poster; opacity=1" aria-label="Local demo application, tickets API">
-            <div class="app-stage__bar"><span class="app-stage__dot"></span><span class="mono">tickets-api / sample</span><span class="app-stage__status">ready</span></div>
-            <div class="app-stage__body">
-              <div><p class="mono">Opening night ticket</p><strong>Front row reserved</strong><span>booking sample: ON-2047</span></div>
-              <dl><div><dt>event</dt><dd>Opening night</dd></div><div><dt>seats</dt><dd>2 reserved</dd></div><div><dt>status</dt><dd>confirmed</dd></div></dl>
+      <section id="mission" class="journey" data-journey-phase="application" data-journey-progress="0" data-sc-act="journey=static" aria-labelledby="journey-title">
+        <div class="journey__stage">
+          <div class="journey__scene" data-journey-scene aria-hidden="true"><canvas></canvas></div>
+          <p class="journey__service mono">Service <span>routes requests to tickets-api</span></p>
+          <nav class="journey__rail mono" aria-label="Journey chapters">
+            <a href="#application">Application</a>
+            <a href="#docker">Docker</a>
+            <a href="#kubernetes">Kubernetes</a>
+          </nav>
+        </div>
+        <div class="journey__chapters">
+          <section id="application" class="journey__chapter journey__chapter--application" aria-labelledby="journey-title">
+            <div class="wrap journey__chapter-in">
+              <div class="journey__copy">
+                <p class="eyebrow">Application</p>
+                <h2 id="journey-title" class="display">Meet the app behind <em>opening night.</em></h2>
+                <p class="lead">tickets-api reserves Front row seats for ON-2047. It works locally; the question is how to carry that behavior into production.</p>
+                <p class="journey__detail mono">tickets-api · 2 seats · confirmed</p>
+                <nav class="journey__fallback-rail mono" aria-label="Journey chapters"><a href="#application">Application</a><a href="#docker">Docker</a><a href="#kubernetes">Kubernetes</a></nav>
+              </div>
+              <img class="journey__fallback" src="/images/experience/journey-application.jpg" alt="The tickets-api application showing a confirmed opening-night booking" width="1400" height="900" />
             </div>
-            <button class="app-stage__view" data-view-3d type="button" aria-pressed="false">Open 3D model <span aria-hidden="true">↗</span></button>
-            <p class="app-stage__error" data-scene-error role="status"></p>
-            <div class="app-stage__scene" data-scene aria-hidden="true"><canvas></canvas></div>
-          </div>
+          </section>
+          <section id="docker" class="journey__chapter journey__chapter--docker" aria-labelledby="docker-title">
+            <div class="wrap journey__chapter-in">
+              <div class="journey__copy">
+                <p class="eyebrow">Docker</p>
+                <h2 id="docker-title" class="display">Package the app with its <em>dependencies.</em></h2>
+                <p class="lead">The shell closes around the same tickets-api application to make one portable image. The ticket does not change; its runtime becomes explicit.</p>
+                <p class="journey__detail mono">image · app + dependencies</p>
+              </div>
+              <img class="journey__fallback" src="/images/experience/journey-docker.jpg" alt="The tickets-api application enclosed as a Docker image" width="1400" height="900" />
+            </div>
+          </section>
+          <section id="kubernetes" class="journey__chapter journey__chapter--kubernetes" aria-labelledby="kubernetes-title">
+            <div class="wrap journey__chapter-in">
+              <div class="journey__copy">
+                <p class="eyebrow">Kubernetes</p>
+                <h2 id="kubernetes-title" class="display">Run three identical <em>Pods.</em></h2>
+                <p class="lead">Kubernetes runs the same packaged image three times. A Service gives booking traffic one stable route to those replicas.</p>
+                <p class="journey__detail mono">Service → 3 Pods → tickets-api image</p>
+              </div>
+              <img class="journey__fallback" src="/images/experience/journey-kubernetes.jpg" alt="Three tickets-api Pods behind a Kubernetes Service" width="1400" height="900" />
+            </div>
+          </section>
         </div>
       </section>
 

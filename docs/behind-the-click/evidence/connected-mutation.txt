@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: the application and Docker chapters hold after each transition completes
+not ok 1 - the application and Docker chapters hold after each transition completes
+  ---
+  duration_ms: 1.588375
+  type: 'test'
+  location: '/private/var/folders/_k/7dgz_h9s6j35knpn0rnkk1ym0000gn/T/opscortex-journey-red-rmewq8et/test/journey.test.mjs:5:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+      {
+    +   enclosure: 0,
+    +   phase: 'application',
+    -   enclosure: 1,
+    -   phase: 'docker',
+        replicas: 0
+      }
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    phase: 'docker'
+    enclosure: 1
+    replicas: 0
+  actual:
+    phase: 'application'
+    enclosure: 0
+    replicas: 0
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/var/folders/_k/7dgz_h9s6j35knpn0rnkk1ym0000gn/T/opscortex-journey-red-rmewq8et/test/journey.test.mjs:7:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: the timeline is deterministic when scroll reverses through a transform
+not ok 2 - the timeline is deterministic when scroll reverses through a transform
+  ---
+  duration_ms: 0.452
+  type: 'test'
+  location: '/private/var/folders/_k/7dgz_h9s6j35knpn0rnkk1ym0000gn/T/opscortex-journey-red-rmewq8et/test/journey.test.mjs:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+      {
+    +   enclosure: 0,
+    +   phase: 'application',
+    +   replicas: 0
+    -   enclosure: 1,
+    -   phase: 'kubernetes',
+    -   replicas: 0.5
+      }
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    phase: 'kubernetes'
+    enclosure: 1
+    replicas: 0.5
+  actual:
+    phase: 'application'
+    enclosure: 0
+    replicas: 0
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/var/folders/_k/7dgz_h9s6j35knpn0rnkk1ym0000gn/T/opscortex-journey-red-rmewq8et/test/journey.test.mjs:13:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 67.296959
