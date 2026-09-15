@@ -21,6 +21,10 @@ The `main` branch intentionally disables butterfly animation: pages do not mount
 its canvas or load its script. `main_with_butterfly` preserves the animated site.
 Butterfly source artwork remains unchanged for that branch's continued use.
 
+The `deploy` branch publishes only the newsletter landing at `/` and its archive
+articles at `/newsletter/[id]`. Its shared shell omits course/about navigation
+and the course waitlist, keeping the existing branding, theme toggle, and motion.
+
 OpsCortex teaches production Kubernetes, SRE, DevOps, and cloud engineering.
 The visual language combines editorial serif headlines, restrained technical
 metadata, generous spacing, quiet surfaces, and practical engineering content.

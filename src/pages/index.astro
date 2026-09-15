@@ -1,267 +1,42 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import CourseCard from '../components/CourseCard.astro';
 import Newsletter from '../components/Newsletter.astro';
 
-const courses = (await getCollection('courses')).sort((a, b) => a.data.order - b.data.order);
-const featured = courses.filter((c) => c.data.featured).slice(0, 3);
-const posts = (await getCollection('posts')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3);
-const hours = courses.reduce((n, c) => n + c.data.hours, 0);
-const full = courses.reduce((n, c) => n + c.data.price, 0);
-
-const tools = ['Kubernetes', 'Terraform', 'AWS', 'GCP', 'Prometheus', 'Grafana', 'Argo CD', 'OpenTelemetry', 'Helm', 'Linux', 'Istio', 'GitHub Actions'];
-
-// TODO: placeholder testimonials. Replace with real quotes + names before launch.
-const quotes = [
-  ['I finally understand why our cluster falls over on deploys. Fixed it the week after module three.', 'Senior SRE, Series C fintech'],
-  ['The SLO module changed how our product team talks to us. That alone was worth it.', 'Engineering Manager, healthtech'],
-  ['Every lab breaks. On purpose. It is the closest thing to on-call without the pager.', 'Platform Engineer, e-commerce'],
-  ['I have taken four Kubernetes courses. This is the first one written by someone who has been paged.', 'Staff Engineer, SaaS'],
-  ['The Terraform refactor lab saved us from a state disaster two weeks later. Not exaggerating.', 'DevOps Lead, logistics'],
-  ['Postmortem module should be mandatory for every engineering manager.', 'Director of Engineering, media'],
-];
+const posts = (await getCollection('posts')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 ---
-<Base title="Production-grade Kubernetes, SRE & Cloud courses">
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero__glow" data-glow></div>
-    <div class="hero__fade"></div>
-    <div class="wrap hero__content text-center">
-      <p class="eyebrow justify-center" data-hero>Courses for engineers who carry the pager</p>
-      <h1 class="display h1 mt-7" data-split>Run production like<br />you <em>own</em> it.</h1>
-      <p class="lead mx-auto mt-9" data-hero>
-        Kubernetes, SRE, DevOps and cloud, taught from ten years of real incidents. No toy clusters. No slide decks. Labs that break, and the judgment to fix them.
-      </p>
-      <div class="flex gap-3 justify-center flex-wrap mt-11" data-hero>
-        <a href="/courses" class="btn magnetic">Explore courses
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-        <a href="/newsletter" class="btn btn--ghost magnetic">Read the newsletter</a>
-      </div>
-      <p class="mono mt-12" data-hero>{courses.length} courses &nbsp;·&nbsp; {hours} hours &nbsp;·&nbsp; lifetime access</p>
+<Base title="The Pager Digest" description="One production lesson a week. Real incidents, redacted. Five minutes, no fluff.">
+  <section class="page-hero pt-44 pb-16">
+    <div class="page-hero__glow" data-glow aria-hidden="true"></div>
+    <div class="wrap">
+      <p class="eyebrow" data-hero>The Pager Digest</p>
+      <h1 class="display h1 mt-6" data-split>What the pager <em>taught</em> me.</h1>
+      <p class="lead mt-8" data-hero>One production lesson a week, written for engineers who are tired of blog posts that stop at hello world.</p>
     </div>
   </section>
 
-  <!-- TOOLS MARQUEE -->
-  <div class="marquee py-8 border-y border-[var(--line)]" style="--dur:45s">
-    <div class="marquee__track">
-      {[...tools, ...tools].map((t) => <span class="mono text-[.85rem] text-[var(--dim)] flex items-center gap-14"><span class="text-[var(--text)]">{t}</span><span class="w-1 h-1 rounded-full bg-[var(--accent)]"></span></span>)}
-    </div>
-  </div>
+  <section id="subscribe" class="section--tight pt-0">
+    <div class="wrap"><Newsletter /></div>
+  </section>
 
-  <!-- MANIFESTO -->
   <section class="section">
     <div class="wrap">
-      <p class="eyebrow" data-reveal>Why this exists</p>
-      <p class="display mt-8 max-w-[62rem]" style="font-size:clamp(1.9rem,4.1vw,3.7rem);line-height:1.15" data-manifesto>
-        Most courses teach you to pass an exam. Then production hands you a pager and a cluster you did not build. We teach the other thing: how systems actually fail, how to see it coming, and how to be the calm one in the incident channel.
-      </p>
-    </div>
-  </section>
-
-  <!-- FEATURED COURSES -->
-  <section class="section pt-0">
-    <div class="wrap">
-      <div class="flex items-end justify-between gap-6 flex-wrap">
-        <div data-parallax="18">
-          <p class="eyebrow" data-reveal>Courses</p>
-          <h2 class="display h2 mt-5" data-split>Built from incidents,<br />not <em>slide decks</em>.</h2>
-        </div>
-        <a href="/courses" class="link" data-reveal>All {courses.length} courses
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-      </div>
-      <div class="grid md:grid-cols-3 gap-4 mt-14">
-        {featured.map((c, i) => <CourseCard course={c} delay={i * 0.1} />)}
-      </div>
-    </div>
-  </section>
-
-  <!-- BENTO -->
-  <section class="section bg-[var(--bg2)] border-y border-[var(--line)]">
-    <div class="wrap">
-      <div data-parallax="16">
-        <p class="eyebrow" data-reveal>What is inside</p>
-        <h2 class="display h2 mt-5 max-w-3xl" data-split>Everything a bootcamp promises. <em>Nothing</em> it pads.</h2>
-      </div>
-      <div class="grid md:grid-cols-12 gap-4 mt-14">
-        <div class="card md:col-span-7 min-w-0" data-reveal>
-          <div class="card__in">
-            <span class="mono text-[var(--accent2)]">01</span>
-            <h3 class="display h3 mt-6">Labs that break on purpose</h3>
-            <p class="text-[var(--muted)] mt-3 max-w-md">Every module ends with a live environment and a fault you did not see coming. You diagnose. You fix. You write it up.</p>
-            <pre class="term mt-8" data-term><code><span class="ln"><span class="c">$</span> kubectl get pods -n payments</span>
-<span class="ln">NAME                        READY   STATUS             RESTARTS   AGE</span>
-<span class="ln">payments-api-7d9f8c-x2k4p   0/1     <span class="e">CrashLoopBackOff</span>   14         9m</span>
-<span class="ln">payments-api-7d9f8c-mm9qz   1/1     Running            0          9m</span>
-<span class="ln"><span class="c">$</span> kubectl logs payments-api-7d9f8c-x2k4p --previous --tail=3</span>
-<span class="ln"><span class="d">fatal: connection refused: postgres:5432 (timeout 2s)</span></span>
-<span class="ln"><span class="c">$</span> <span class="cursor">▍</span></span></code></pre>
-          </div>
-        </div>
-        <div class="card md:col-span-5" data-reveal data-delay="0.1">
-          <div class="card__in">
-            <span class="mono text-[var(--accent2)]">02</span>
-            <h3 class="display h3 mt-6">Real postmortems, redacted</h3>
-            <p class="text-[var(--muted)] mt-3">Actual incidents from payments, cloud and platform teams, with names removed and lessons intact. You will recognise your own systems.</p>
-            <div class="mt-auto pt-8 grid gap-2">
-              {['SEV1 · etcd disk full, control plane down 41 min', 'SEV2 · DNS TTL change, 12% error rate for 3 hrs', 'SEV1 · Terraform apply destroyed prod subnet'].map((s) => (
-                <div class="flex items-center gap-3 mono text-[.75rem] text-[var(--muted)] border border-[var(--line)] rounded-lg px-3 py-2"><span class="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0"></span>{s}</div>
-              ))}
-            </div>
-          </div>
-        </div>
-        {[
-          ['03', 'Lifetime access, every update', 'Kubernetes changes three times a year. Your course does too. Buy once.'],
-          ['04', 'A cohort channel that is not dead', 'Private space with the other engineers in your course. Questions get answered by people who ship.'],
-          ['05', 'Code you can ship Monday', 'Every lab repo is MIT licensed and production-shaped. Fork it. Use it. Nobody will know.'],
-        ].map(([n, t, p], i) => (
-          <div class="card md:col-span-4" data-reveal data-delay={String(i * 0.08)}>
-            <div class="card__in">
-              <span class="mono text-[var(--accent2)]">{n}</span>
-              <h3 class="text-xl font-semibold mt-6 tracking-tight">{t}</h3>
-              <p class="text-[var(--muted)] mt-3">{p}</p>
-            </div>
-          </div>
+      <p class="eyebrow" data-reveal>Archive</p>
+      <ul class="mt-8">
+        {posts.map((p, i) => (
+          <li class="border-t border-[var(--line)] last:border-b" data-reveal data-delay={String(i * 0.06)}>
+            <a href={`/newsletter/${p.id}`} class="group grid md:grid-cols-[9rem_1fr_auto] gap-x-8 gap-y-2 py-8 items-baseline">
+              <span class="mono">{fmt(p.data.date)}</span>
+              <span>
+                <span class="display block group-hover:text-[var(--accent2)] transition-colors" style="font-size:clamp(1.6rem,2.6vw,2.4rem);line-height:1.1">{p.data.title}</span>
+                <span class="block text-[var(--muted)] mt-3 max-w-2xl">{p.data.description}</span>
+              </span>
+              <span class="mono">{p.data.minutes} min</span>
+            </a>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   </section>
-
-  <!-- STATS -->
-  <section class="section--tight">
-    <div class="wrap grid grid-cols-2 md:grid-cols-4 gap-8 py-8">
-      {[
-        ['10', '', 'years on-call'],
-        [String(hours), '+', 'hours of material'],
-        [String(courses.length), '', 'courses, one path'],
-        ['4800', '+', 'newsletter readers'], // TODO: placeholder count
-      ].map(([n, s, l], i) => (
-        <div data-reveal data-delay={String(i * 0.08)}>
-          <div class="display" style="font-size:clamp(3rem,6vw,5.5rem);line-height:1" data-count={n} data-suffix={s}>0</div>
-          <p class="mono mt-2">{l}</p>
-        </div>
-      ))}
-    </div>
-  </section>
-
-  <!-- INSTRUCTOR -->
-  <section class="section">
-    <div class="wrap grid md:grid-cols-[1fr_1.25fr] gap-12 lg:gap-20 items-center">
-      <div data-parallax="-26">
-        <div class="card" data-reveal>
-          <div class="card__in portrait">
-            {/* TODO: replace with real photo */}
-            <span class="display portrait__mark" aria-hidden="true">MK</span>
-            <div class="mt-auto">
-              <p class="font-semibold text-lg">Mahesh Kokare</p>
-              <p class="text-[var(--muted)]">Site Reliability Engineer · 10 years</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <p class="eyebrow" data-reveal>Your instructor</p>
-        <h2 class="display h2 mt-5" data-split>Ten years of <em>3 a.m.</em>, distilled.</h2>
-        <p class="lead mt-7" data-reveal>
-          {/* TODO: placeholder bio */}
-          A decade keeping payments, cloud platforms and fast-growing startups online. Hundreds of incidents commanded. Thousands of engineers on-call rotations designed. Every course here started as something that paged me.
-        </p>
-        <div class="flex gap-3 flex-wrap mt-9" data-reveal>
-          <a href="/about" class="btn btn--ghost magnetic">More about me</a>
-          <a href="/newsletter" class="link self-center ml-2">Read the letter</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- TESTIMONIALS -->
-  <section class="section--tight border-y border-[var(--line)] overflow-hidden">
-    <div class="wrap mb-10" data-reveal>
-      <p class="eyebrow">From the cohort</p>
-    </div>
-    <div class="marquee" style="--dur:70s;--gap:1rem">
-      <div class="marquee__track">
-        {[...quotes, ...quotes].map(([q, who]) => (
-          <figure class="card w-[380px] shrink-0 m-0">
-            <div class="card__in">
-              <blockquote class="display m-0" style="font-size:1.35rem;line-height:1.3">“{q}”</blockquote>
-              <figcaption class="mono mt-6">{who}</figcaption>
-            </div>
-          </figure>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- NEWSLETTER -->
-  <section class="section">
-    <div class="wrap">
-      <div class="grid lg:grid-cols-[1fr_1.1fr] gap-12 items-start">
-        <div>
-          <p class="eyebrow" data-reveal>Latest from the letter</p>
-          <ul class="mt-8 grid">
-            {posts.map((p, i) => (
-              <li class="border-t border-[var(--line)] last:border-b" data-reveal data-delay={String(i * 0.08)}>
-                <a href={`/newsletter/${p.id}`} class="group flex gap-6 py-6 items-baseline">
-                  <span class="mono shrink-0 w-28">{fmt(p.data.date)}</span>
-                  <span class="display text-2xl group-hover:text-[var(--accent2)] transition-colors">{p.data.title}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-          <a href="/newsletter" class="link mt-8 inline-flex">All posts
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a>
-        </div>
-        <Newsletter compact />
-      </div>
-    </div>
-  </section>
-
-  <!-- FINAL CTA -->
-  <section class="section relative overflow-hidden">
-    <div class="cta__glow" data-glow aria-hidden="true"></div>
-    <div class="wrap text-center relative">
-      <p class="eyebrow justify-center" data-reveal>The Whole Stack</p>
-      <h2 class="display h1 mt-6" style="font-size:clamp(2.75rem,7vw,6.5rem)" data-split>Stop rehearsing.<br /><em>Start running</em> production.</h2>
-      <p class="lead mx-auto mt-8" data-reveal>All {courses.length} courses. {hours} hours. Every future update. One founding-member price, locked for life.</p>
-      <div class="flex items-center justify-center gap-6 mt-10 flex-wrap" data-reveal>
-        <div class="text-left">
-          <div class="display" style="font-size:3.5rem;line-height:1">$999</div>
-          <div class="mono"><s>${full.toLocaleString()}</s> separately</div>
-        </div>
-        <button class="btn magnetic text-base px-8 py-4" data-waitlist="The Whole Stack">Join the founding waitlist
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
-      </div>
-      <p class="mono mt-6" data-reveal>30-day refund. No questions. <a class="underline underline-offset-4 hover:text-[var(--text)]" href="/courses#bundle">See what is included</a></p>
-    </div>
-  </section>
-
 </Base>
-
-<style>
-  /* monarch scene: the canvas is fixed and page-wide so the follower can travel with the viewport; it sits under the nav (50) */
-  .hero { position: relative; min-height: 92svh; display: grid; place-items: center; padding-top: clamp(7rem, 18vh, 11rem); padding-bottom: 4rem; overflow: hidden; }
-  .hero__glow { position: absolute; inset: 0; background: radial-gradient(60% 38% at 50% 26%, rgba(232, 82, 74, 0.16), transparent 70%), radial-gradient(40% 30% at 80% 20%, rgba(255, 143, 132, 0.08), transparent 70%); }
-  .hero__fade { position: absolute; inset: auto 0 0 0; height: 35%; background: linear-gradient(180deg, transparent, var(--bg)); z-index: 1; }
-  /* own compositor layer: the scrub moves it every frame and the blurred shadow must not re-rasterize */
-  .hero__content { position: relative; z-index: 2; text-shadow: 0 2px 40px var(--bg); will-change: transform, opacity; }
-  /* terminal stays dark in both themes on purpose; lines type in when scrolled into view */
-  .term { margin: 0; background: #0a0a0d; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 1.1rem 1.25rem; font-family: var(--mono); font-size: .78rem; line-height: 1.7; color: #8f8f99; overflow-x: auto; }
-  :global(.js) .term .ln { opacity: 0; }
-  @media (prefers-reduced-motion: reduce) { :global(.js) .term .ln { opacity: 1; } }
-  .term .c { color: var(--accent2); }
-  .term .e { color: #ff6b61; font-weight: 500; }
-  .term .d { color: #d0d0d8; }
-  .term .cursor { color: var(--accent2); animation: blink 1.1s steps(2) infinite; }
-  @keyframes blink { to { opacity: 0; } }
-
-  .portrait { aspect-ratio: 4 / 5; position: relative; overflow: hidden; background: radial-gradient(80% 60% at 30% 20%, rgba(232, 82, 74, 0.35), transparent 60%), linear-gradient(180deg, var(--bg2), var(--bg)); }
-  .portrait__mark { position: absolute; right: -4%; top: -6%; font-size: clamp(9rem, 16vw, 15rem); line-height: 1; color: var(--text); opacity: .06; letter-spacing: -.06em; }
-
-  .cta__glow { position: absolute; inset: 0; background: radial-gradient(50% 60% at 50% 100%, rgba(232, 82, 74, 0.22), transparent 70%); }
-</style>
